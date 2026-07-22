@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import Toast from '../../components/Toast';
-import { User, Mail, Phone, Lock, Save, Calendar } from 'lucide-react';
+import { User, Mail, Phone, Lock, Save, Calendar, LogOut } from 'lucide-react';
 
 const Profile = () => {
-  const { student, user, updateProfile } = useAuth();
+  const { student, user, updateProfile, logout } = useAuth();
+  const navigate = useNavigate();
   
   const [email, setEmail] = useState(user?.email || '');
   const [phone, setPhone] = useState(student?.phone || '');
@@ -14,6 +16,16 @@ const Profile = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('info');
+
+  React.useEffect(() => {
+    if (user?.email) setEmail(user.email);
+    if (student?.phone) setPhone(student.phone);
+  }, [user, student]);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,7 +58,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', paddingBottom: '3rem' }}>
       <div>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'white', marginBottom: '0.25rem' }}>Student Profile Settings</h1>
         <p style={{ color: 'var(--text-secondary)' }}>Manage your personal details, updates, and account credentials.</p>
@@ -98,6 +110,30 @@ const Profile = () => {
               <span style={{ color: 'var(--text-secondary)' }}>Birth Date:</span>
               <span style={{ color: 'white', fontWeight: 600 }}>{student?.date_of_birth ? new Date(student.date_of_birth).toLocaleDateString() : 'N/A'}</span>
             </div>
+          </div>
+
+          {/* Account Session / Logout */}
+          <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '1.25rem' }}>
+            <button
+              onClick={handleLogout}
+              style={{
+                width: '100%',
+                background: '#fee2e2',
+                color: '#dc2626',
+                border: '1px solid #fca5a5',
+                borderRadius: 10,
+                padding: '0.75rem 1rem',
+                fontWeight: 700,
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+              }}
+            >
+              <LogOut size={16} /> Sign Out of Account
+            </button>
           </div>
         </div>
 

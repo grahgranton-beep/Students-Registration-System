@@ -286,12 +286,12 @@ const Login = () => {
               color: '#6b7280',
             }}
           >
-            New student?{' '}
+            {role === 'admin' ? 'New administrator? ' : 'New user? '}
             <Link
               to="/register"
               style={{ color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}
             >
-              Complete Onboarding
+              {role === 'admin' ? 'Create Admin Account' : 'Create Account / Register'}
             </Link>
           </p>
         </div>

@@ -98,6 +98,23 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const registerAdmin = async (adminData) => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/register-admin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(adminData)
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Admin registration failed');
+      }
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
   const updateProfile = async (profileData) => {
     if (!token || !student) return { success: false, error: 'Not authenticated' };
     try {
@@ -129,6 +146,7 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     registerStudent,
+    registerAdmin,
     updateProfile
   };
 

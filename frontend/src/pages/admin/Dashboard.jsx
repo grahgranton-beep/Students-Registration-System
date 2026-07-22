@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
-import { Users, Clock, CheckCircle2, AlertTriangle, ShieldCheck, Mail, Check, X, ShieldAlert } from 'lucide-react';
+import { Users, Clock, CheckCircle2, AlertTriangle, ShieldCheck, Mail, Check, X, ShieldAlert, RotateCcw, Filter } from 'lucide-react';
 
 // ── Inline Bar Chart ──────────────────────────────────────────────────────
 const BarChart = ({ data }) => {
@@ -34,7 +34,8 @@ const AdminDashboard = () => {
   });
   const [logs, setLogs] = useState([]);
   const [students, setStudents] = useState([]);
-  const [pendingRegs, setPendingRegs] = useState([]);
+  const [allRegs, setAllRegs] = useState([]);
+  const [filterStatus, setFilterStatus] = useState('all'); // 'all', 'pending', 'approved', 'rejected'
   const [loading, setLoading] = useState(true);
   const [chartView, setChartView] = useState('monthly');
   const [searchId, setSearchId] = useState('');
@@ -67,7 +68,7 @@ const AdminDashboard = () => {
       if (dashRes.recent_logs) setLogs(dashRes.recent_logs);
       if (Array.isArray(stuRes)) setStudents(stuRes);
       if (Array.isArray(regsRes)) {
-        setPendingRegs(regsRes.filter(r => r.status === 'pending'));
+        setAllRegs(regsRes);
       }
     } catch (err) {
       console.error(err);
@@ -92,7 +93,7 @@ const AdminDashboard = () => {
         body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) {
-        showToast(`Registration request ${newStatus.toUpperCase()} successfully!`, 'success');
+        showToast(`Registration request updated to ${newStatus.toUpperCase()}!`, 'success');
         fetchDashboardData();
       } else {
         const errData = await res.json();
@@ -104,9 +105,10 @@ const AdminDashboard = () => {
   };
 
   const handleBulkApprove = async () => {
-    if (pendingRegs.length === 0) return;
+    const pendingList = allRegs.filter(r => r.status === 'pending');
+    if (pendingList.length === 0) return;
     try {
-      const ids = pendingRegs.map(r => r.id);
+      const ids = pendingList.map(r => r.id);
       const res = await fetch('http://localhost:5000/api/registrations/bulk-status', {
         method: 'PUT',
         headers: {
@@ -125,6 +127,32 @@ const AdminDashboard = () => {
       showToast('Connection error during bulk approval', 'error');
     }
   };
+
+  const handleResetToPending = async () => {
+    if (allRegs.length === 0) return;
+    try {
+      const ids = allRegs.map(r => r.id);
+      const res = await fetch('http://localhost:5000/api/registrations/bulk-status', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ids, status: 'pending' }),
+      });
+      if (res.ok) {
+        showToast(`Reset ${ids.length} registration(s) to PENDING for testing!`, 'info');
+        fetchDashboardData();
+      }
+    } catch {
+      showToast('Connection error during status reset', 'error');
+    }
+  };
+
+  const pendingRegs = allRegs.filter(r => r.status === 'pending');
+  const displayedRegs = filterStatus === 'all'
+    ? allRegs
+    : allRegs.filter(r => r.status === filterStatus);
 
   const approvalRate = stats.total_students > 0
     ? Math.round(((stats.total_students - pendingRegs.length) / stats.total_students) * 100)
@@ -191,7 +219,7 @@ const AdminDashboard = () => {
           Registrar Overview
         </h1>
         <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-          Institutional performance and real-time registration approvals.
+          Institutional performance and real-time unit registration approvals.
         </p>
       </div>
 
@@ -281,38 +309,86 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* ── 1. REGISTRATION APPROVAL QUEUE (ADMIN FUNCTIONALITY) ── */}
+      {/* ── 1. REGISTRATION APPROVAL CONTROL PANEL (ADMIN FUNCTIONALITY) ── */}
       <div className="card" style={{ padding: '1.25rem', border: '1.5px solid var(--border)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
           <div>
-            <h3 style={{ fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
-              <ShieldAlert size={18} color="#d97706" />
-              Pending Unit Registration Approvals ({pendingRegs.length})
+            <h3 style={{ fontWeight: 800, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+              <ShieldAlert size={20} color="#d97706" />
+              Student Unit Registrations Management ({allRegs.length})
             </h3>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0' }}>
-              Review student unit enrollment requests and accept or reject them.
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0' }}>
+              Accept, reject, or modify status for any student unit registration request.
             </p>
           </div>
 
-          {pendingRegs.length > 0 && (
-            <button
-              onClick={handleBulkApprove}
-              style={{
-                background: '#059669', color: 'white', border: 'none',
-                borderRadius: 8, padding: '0.45rem 0.85rem',
-                fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: '0.35rem',
-              }}
-            >
-              <Check size={15} /> Approve All Pending ({pendingRegs.length})
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {pendingRegs.length > 0 && (
+              <button
+                type="button"
+                onClick={handleBulkApprove}
+                style={{
+                  background: '#059669', color: 'white', border: 'none',
+                  borderRadius: 8, padding: '0.45rem 0.85rem',
+                  fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '0.35rem',
+                }}
+              >
+                <Check size={15} /> Approve All Pending ({pendingRegs.length})
+              </button>
+            )}
+
+            {allRegs.length > 0 && (
+              <button
+                type="button"
+                onClick={handleResetToPending}
+                style={{
+                  background: '#f59e0b', color: 'white', border: 'none',
+                  borderRadius: 8, padding: '0.45rem 0.85rem',
+                  fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '0.35rem',
+                }}
+                title="Reset status of all registrations back to Pending"
+              >
+                <RotateCcw size={15} /> Reset All to Pending
+              </button>
+            )}
+          </div>
         </div>
 
-        {pendingRegs.length === 0 ? (
+        {/* Filter Bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', background: '#f8fafc', padding: '0.5rem', borderRadius: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6b7280', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+            <Filter size={14} /> Filter Status:
+          </span>
+          {['all', 'pending', 'approved', 'rejected'].map(st => (
+            <button
+              key={st}
+              type="button"
+              onClick={() => setFilterStatus(st)}
+              style={{
+                padding: '0.3rem 0.65rem',
+                borderRadius: 6,
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                background: filterStatus === st ? '#111827' : '#ffffff',
+                color: filterStatus === st ? '#ffffff' : '#6b7280',
+                boxShadow: filterStatus === st ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                border: '1px solid #e5e7eb'
+              }}
+            >
+              {st} ({st === 'all' ? allRegs.length : allRegs.filter(r => r.status === st).length})
+            </button>
+          ))}
+        </div>
+
+        {displayedRegs.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '2rem 1rem', background: '#f9fafb', borderRadius: 8, border: '1px dashed #e5e7eb' }}>
             <CheckCircle2 size={32} color="#10b981" style={{ marginBottom: '0.5rem' }} />
-            <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', margin: 0 }}>All unit registrations are approved!</p>
+            <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', margin: 0 }}>No unit registrations match status filter '{filterStatus}'.</p>
             <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>When students register for units, their requests will appear here for your approval.</p>
           </div>
         ) : (
@@ -324,12 +400,12 @@ const AdminDashboard = () => {
                   <th>Student Name</th>
                   <th>Unit Code</th>
                   <th>Unit Name</th>
-                  <th>Credits</th>
-                  <th style={{ textAlign: 'center', width: 160 }}>Action</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: 'center', width: 240 }}>Action Controls</th>
                 </tr>
               </thead>
               <tbody>
-                {pendingRegs.map(reg => (
+                {displayedRegs.map(reg => (
                   <tr key={reg.id}>
                     <td style={{ fontWeight: 700 }}>{reg.student_reg_no || 'N/A'}</td>
                     <td style={{ fontWeight: 600 }}>{reg.student_name || 'Student'}</td>
@@ -339,33 +415,82 @@ const AdminDashboard = () => {
                       </span>
                     </td>
                     <td>{reg.unit_name}</td>
-                    <td>{reg.unit_credits} Credits</td>
+                    <td>
+                      <span className={`badge badge-${reg.status === 'approved' ? 'approved' : reg.status === 'rejected' ? 'rejected' : 'pending'}`}>
+                        {reg.status.toUpperCase()}
+                      </span>
+                    </td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
                         <button
+                          type="button"
                           onClick={() => handleUpdateStatus(reg.id, 'approved')}
                           style={{
-                            background: '#10b981', color: 'white', border: 'none',
-                            borderRadius: 6, padding: '0.35rem 0.65rem',
-                            fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: '0.2rem',
+                            background: reg.status === 'approved' ? '#059669' : '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 6,
+                            padding: '0.4rem 0.75rem',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            opacity: reg.status === 'approved' ? 0.7 : 1,
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                           }}
                           title="Approve Unit Registration"
                         >
                           <Check size={14} /> Accept
                         </button>
+
                         <button
+                          type="button"
                           onClick={() => handleUpdateStatus(reg.id, 'rejected')}
                           style={{
-                            background: '#ef4444', color: 'white', border: 'none',
-                            borderRadius: 6, padding: '0.35rem 0.65rem',
-                            fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: '0.2rem',
+                            background: reg.status === 'rejected' ? '#dc2626' : '#ef4444',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: 6,
+                            padding: '0.4rem 0.75rem',
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            opacity: reg.status === 'rejected' ? 0.7 : 1,
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
                           }}
                           title="Reject Unit Registration"
                         >
                           <X size={14} /> Reject
                         </button>
+
+                        {reg.status !== 'pending' && (
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateStatus(reg.id, 'pending')}
+                            style={{
+                              background: '#6b7280',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: 6,
+                              padding: '0.4rem 0.65rem',
+                              fontSize: '0.78rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem',
+                              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                            }}
+                            title="Reset to Pending"
+                          >
+                            <RotateCcw size={14} /> Pending
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

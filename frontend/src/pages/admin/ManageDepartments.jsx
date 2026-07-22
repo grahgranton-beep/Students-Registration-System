@@ -305,7 +305,7 @@ const ManageDepartments = () => {
         <div style={{
           position: 'fixed', top: 0, right: 0, bottom: 0, left: 0,
           backgroundColor: 'rgba(9, 13, 22, 0.8)', backdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'center', justifyCenter: 'center', zIndex: 999, padding: '1.5rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: '1.5rem',
           justifyContent: 'center'
         }}>
           <form onSubmit={handleDeptSubmit} className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: 450, padding: '2rem' }}>
@@ -349,7 +349,7 @@ const ManageDepartments = () => {
         <div style={{
           position: 'fixed', top: 0, right: 0, bottom: 0, left: 0,
           backgroundColor: 'rgba(9, 13, 22, 0.8)', backdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'center', justifyCenter: 'center', zIndex: 999, padding: '1.5rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: '1.5rem',
           justifyContent: 'center'
         }}>
           <form onSubmit={handleSessSubmit} className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: 450, padding: '2rem' }}>
