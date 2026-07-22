@@ -594,6 +594,37 @@ def update_registration_status(id):
     )
     return jsonify(reg.to_dict()), 200
 
+@api_bp.route('/registrations/bulk-status', methods=['PUT'])
+@jwt_required()
+@role_required('admin')
+def bulk_update_registration_status():
+    """Approve or reject multiple registrations at once."""
+    data = request.get_json() or {}
+    ids = data.get('ids', [])
+    status = data.get('status')
+    
+    if status not in ['approved', 'rejected', 'pending']:
+        return jsonify({"error": "Invalid status. Use 'approved', 'rejected', or 'pending'."}), 400
+    if not ids:
+        return jsonify({"error": "No registration IDs provided."}), 400
+    
+    updated = Registration.query.filter(Registration.id.in_(ids)).all()
+    if not updated:
+        return jsonify({"error": "No matching registrations found."}), 404
+    
+    for reg in updated:
+        reg.status = status
+    db.session.commit()
+    
+    user_id = int(get_jwt_identity())
+    log_activity(
+        user_id,
+        "bulk_update_registration_status",
+        "registration",
+        f"Bulk updated {len(updated)} registrations to '{status}' (IDs: {ids})"
+    )
+    return jsonify({"updated": len(updated), "status": status}), 200
+
 @api_bp.route('/registrations/<int:id>', methods=['DELETE'])
 @jwt_required()
 def drop_registration(id):
