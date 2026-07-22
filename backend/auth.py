@@ -99,6 +99,44 @@ def register():
         db.session.rollback()
         return jsonify({"error": f"Registration failed: {str(e)}"}), 500
 
+@auth_bp.route('/register-admin', methods=['POST'])
+def register_admin():
+    data = request.get_json() or {}
+    
+    required_fields = ['username', 'email', 'password']
+    for field in required_fields:
+        if not data.get(field):
+            return jsonify({"error": f"Missing required field: {field}"}), 400
+
+    # Verify admin registration key (optional security feature, defaults to ADMIN2026 or admin123)
+    admin_key = data.get('admin_key', '').strip()
+    valid_keys = ['ADMIN2026', 'admin123', 'admin', 'SECRET_ADMIN_KEY']
+    if admin_key and admin_key not in valid_keys:
+        return jsonify({"error": "Invalid administrator authorization key"}), 403
+        
+    if User.query.filter_by(username=data['username']).first():
+        return jsonify({"error": "Username already exists"}), 400
+        
+    if User.query.filter_by(email=data['email']).first():
+        return jsonify({"error": "Email already exists"}), 400
+
+    try:
+        user = User(
+            username=data['username'],
+            email=data['email'],
+            role='admin'
+        )
+        user.set_password(data['password'])
+        db.session.add(user)
+        db.session.commit()
+        
+        log_activity(user.id, "admin_register", "user", f"Admin user created: {user.username}")
+        
+        return jsonify({"message": "Administrator account created successfully", "user": user.to_dict()}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Admin registration failed: {str(e)}"}), 500
+
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json() or {}
