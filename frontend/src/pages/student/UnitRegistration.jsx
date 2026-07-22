@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
-import { Search, User, CreditCard, CheckSquare, Square, GraduationCap, ChevronRight } from 'lucide-react';
+import { Search, User, CreditCard, GraduationCap, ChevronRight } from 'lucide-react';
 
 // ── Step indicator ──────────────────────────────────────────────────────
 const Stepper = ({ step }) => {
@@ -122,9 +122,13 @@ const UnitRegistration = () => {
       showToast(`Already ${status} for this unit`, 'warning');
       return;
     }
-    if (unit.prerequisite_id && !isPrerequisiteMet(unit.prerequisite_id)) {
-      showToast('Prerequisite not met for this unit', 'warning');
-      return;
+    // unit.prerequisites is an array of { id, code, name } objects from the API
+    if (unit.prerequisites && unit.prerequisites.length > 0) {
+      const unmetPrereq = unit.prerequisites.find(p => !isPrerequisiteMet(p.id));
+      if (unmetPrereq) {
+        showToast(`Prerequisite not met: "${unmetPrereq.code} - ${unmetPrereq.name}"`, 'warning');
+        return;
+      }
     }
     if (!isSelected && projectedCredits + unit.credits > MAX_CREDITS) {
       showToast(`Exceeds maximum credit load (${MAX_CREDITS} credits)`, 'warning');
@@ -142,35 +146,34 @@ const UnitRegistration = () => {
     }
     setSubmitting(true);
     try {
-      const sessRes = await fetch('http://localhost:5000/api/sessions', {
-        headers: { Authorization: `Bearer ${token}` },
+      // Backend expects { unit_ids: [...] } as an array in a single POST
+      const res = await fetch('http://localhost:5000/api/registrations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ unit_ids: selectedUnitIds }),
       });
-      const sessions = await sessRes.json();
-      const active = sessions.find(s => s.is_active);
-      if (!active) { showToast('No active session found', 'error'); setSubmitting(false); return; }
 
-      const results = await Promise.all(
-        selectedUnitIds.map(unitId =>
-          fetch('http://localhost:5000/api/registrations', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ unit_id: unitId, session_id: active.id }),
-          }).then(r => r.json())
-        )
-      );
+      const data = await res.json();
 
-      const success = results.filter(r => !r.error).length;
-      const failed = results.filter(r => r.error).length;
-      if (success > 0) showToast(`${success} unit(s) registered successfully!`, 'success');
-      if (failed > 0) showToast(`${failed} unit(s) failed to register`, 'warning');
+      if (!res.ok) {
+        // Show specific error from backend (prereq, credit limit, etc.)
+        const details = data.details ? `\n• ${data.details.join('\n• ')}` : '';
+        showToast((data.error || 'Registration failed') + details, 'error');
+        return;
+      }
 
+      const count = Array.isArray(data) ? data.length : 1;
+      showToast(`${count} unit(s) registered successfully! Awaiting approval.`, 'success');
       setSelectedUnitIds([]);
+      setStep(0);
+
+      // Refresh registered units list
       const regsRes = await fetch('http://localhost:5000/api/registrations', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRegisteredUnits(await regsRes.json());
     } catch {
-      showToast('Registration failed. Try again.', 'error');
+      showToast('Registration failed. Check your connection and try again.', 'error');
     } finally {
       setSubmitting(false);
     }
@@ -278,6 +281,28 @@ const UnitRegistration = () => {
                     {unit.lecturer && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.35rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                         <User size={12} /> {unit.lecturer}
+                      </div>
+                    )}
+                    {unit.prerequisites && unit.prerequisites.length > 0 && (
+                      <div style={{ marginTop: '0.4rem', display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                        {unit.prerequisites.map(p => {
+                          const pMet = isPrerequisiteMet(p.id);
+                          return (
+                            <span
+                              key={p.id}
+                              style={{
+                                fontSize: '0.68rem', fontWeight: 600,
+                                padding: '0.1rem 0.45rem', borderRadius: 6,
+                                background: pMet ? '#d1fae5' : '#fef3c7',
+                                color: pMet ? '#065f46' : '#92400e',
+                                border: `1px solid ${pMet ? '#6ee7b7' : '#fcd34d'}`,
+                                display: 'inline-flex', alignItems: 'center', gap: '0.2rem'
+                              }}
+                            >
+                              {pMet ? '✓ Prereq:' : '🔒 Prereq:'} {p.code}
+                            </span>
+                          );
+                        })}
                       </div>
                     )}
                     {status && (

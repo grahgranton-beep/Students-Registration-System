@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
-import { Printer, Calendar, FileText, Download } from 'lucide-react';
+import { Calendar, FileText, Download, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { COURSE_MATERIALS } from '../../data/courseMaterials';
 
 const RegisteredUnits = () => {
   const { student, token } = useAuth();
@@ -9,6 +10,10 @@ const RegisteredUnits = () => {
   const [activeSession, setActiveSession] = useState(null);
   const [loading, setLoading] = useState(true);
   
+  // Study View States
+  const [selectedUnit, setSelectedUnit] = useState(null);
+  const [activeChapterIndex, setActiveChapterIndex] = useState(0);
+
   // Toast notifications
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('info');
@@ -108,6 +113,138 @@ const RegisteredUnits = () => {
     }
   };
 
+  const renderMarkdown = (text) => {
+    if (!text) return null;
+    const lines = text.split('\n');
+    let inList = false;
+    let inCode = false;
+    let codeLines = [];
+    const elements = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Code block check
+      if (line.trim().startsWith('```')) {
+        if (inCode) {
+          // End of code block
+          elements.push(
+            <pre key={`code-${i}`} style={{
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              borderLeft: '4px solid var(--brand-primary, #10b981)',
+              padding: '1rem',
+              borderRadius: 'var(--radius-sm)',
+              overflowX: 'auto',
+              fontFamily: 'Consolas, monospace',
+              fontSize: '0.85rem',
+              color: '#a7f3d0',
+              lineHeight: 1.5,
+              margin: '1rem 0'
+            }}>
+              <code>{codeLines.join('\n')}</code>
+            </pre>
+          );
+          codeLines = [];
+          inCode = false;
+        } else {
+          inCode = true;
+        }
+        continue;
+      }
+
+      if (inCode) {
+        codeLines.push(line);
+        continue;
+      }
+
+      // List rendering
+      if (line.trim().startsWith('*') || line.trim().startsWith('-')) {
+        if (!inList) {
+          inList = true;
+        }
+        const cleanLine = line.trim().replace(/^[\*\-]\s+/, '');
+        
+        // Inline styling for bold in list items
+        const parts = cleanLine.split('**');
+        const renderedParts = parts.map((part, idx) => 
+          idx % 2 === 1 ? <strong key={idx} style={{ color: 'white' }}>{part}</strong> : part
+        );
+
+        elements.push(
+          <li key={i} style={{ marginLeft: '1.5rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
+            {renderedParts}
+          </li>
+        );
+        continue;
+      } else {
+        if (inList) {
+          inList = false;
+        }
+      }
+
+      // Headers
+      if (line.startsWith('### ')) {
+        elements.push(
+          <h3 key={i} style={{ color: 'white', fontSize: '1.2rem', fontWeight: 700, marginTop: '1.5rem', marginBottom: '0.75rem' }}>
+            {line.substring(4)}
+          </h3>
+        );
+      } else if (line.startsWith('#### ')) {
+        elements.push(
+          <h4 key={i} style={{ color: 'white', fontSize: '1.05rem', fontWeight: 600, marginTop: '1.25rem', marginBottom: '0.5rem' }}>
+            {line.substring(5)}
+          </h4>
+        );
+      } else if (line.startsWith('> ')) {
+        elements.push(
+          <blockquote key={i} style={{
+            borderLeft: '4px solid var(--brand-secondary, #6366f1)',
+            paddingLeft: '1rem',
+            color: 'var(--text-muted, #9ca3af)',
+            fontStyle: 'italic',
+            margin: '1rem 0',
+            backgroundColor: 'rgba(99, 102, 241, 0.05)',
+            padding: '0.75rem 1rem',
+            borderRadius: '0 var(--radius-sm) var(--radius-sm) 0'
+          }}>
+            {line.substring(2)}
+          </blockquote>
+        );
+      } else if (line.trim() === '') {
+        continue;
+      } else {
+        // Normal paragraph with inline formatting
+        const parts = line.split('**');
+        const boldRendered = parts.map((part, idx) => {
+          if (idx % 2 === 1) {
+            return <strong key={`b-${idx}`} style={{ color: 'white' }}>{part}</strong>;
+          }
+          const codeParts = part.split('`');
+          return codeParts.map((cPart, cIdx) => 
+            cIdx % 2 === 1 
+              ? <code key={`c-${cIdx}`} style={{
+                  backgroundColor: 'rgba(255,255,255,0.08)',
+                  padding: '0.1rem 0.3rem',
+                  borderRadius: 4,
+                  fontFamily: 'Consolas, monospace',
+                  fontSize: '0.85rem',
+                  color: 'var(--brand-primary, #10b981)'
+                }}>{cPart}</code>
+              : cPart
+          );
+        });
+
+        elements.push(
+          <p key={i} style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
+            {boldRendered}
+          </p>
+        );
+      }
+    }
+
+    return <div>{elements}</div>;
+  };
+
   if (loading) {
     return <div style={{ color: 'white', textAlign: 'center', marginTop: '4rem' }}>Loading course card...</div>;
   }
@@ -116,6 +253,132 @@ const RegisteredUnits = () => {
   const currentSemesterCredits = registrations
     .filter(r => r.status === 'approved' || r.status === 'pending')
     .reduce((sum, r) => sum + (r.unit_credits || 0), 0);
+
+  // STUDY MODE
+  if (selectedUnit) {
+    const courseMaterial = COURSE_MATERIALS[selectedUnit] || {
+      title: selectedUnit,
+      chapters: [
+        {
+          id: "syllabus",
+          title: "1. Course Syllabus & Outline",
+          content: `### Welcome to ${selectedUnit}
+This course material is currently being compiled by the department registrar. 
+
+#### Course Objectives:
+*   Understand core theoretical foundations of the subject.
+*   Apply practical skills to coursework and projects.
+*   Prepare for mid-term and final examinations.
+
+Please check back soon for the full lecture slides and textbook materials!`
+        }
+      ]
+    };
+
+    const activeChapter = courseMaterial.chapters[activeChapterIndex] || courseMaterial.chapters[0];
+
+    return (
+      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        {/* Study Mode Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '1px solid var(--border-light)', paddingBottom: '1rem' }}>
+          <button 
+            onClick={() => setSelectedUnit(null)} 
+            className="btn btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.4rem 0.75rem', fontSize: '0.8rem' }}
+          >
+            <ArrowLeft size={14} /> Back to List
+          </button>
+          <div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--brand-primary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {selectedUnit} Study Portal
+            </span>
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white', margin: 0 }}>
+              {courseMaterial.title}
+            </h1>
+          </div>
+        </div>
+
+        {/* Study Portal Grid Layout */}
+        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '1.5rem', alignItems: 'start' }}>
+          {/* Left Chapter Nav Sidebar */}
+          <div className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+            <h3 style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', paddingLeft: '0.5rem', marginBottom: '0.5rem' }}>
+              Course Chapters
+            </h3>
+            {courseMaterial.chapters.map((ch, idx) => (
+              <button
+                key={ch.id}
+                onClick={() => setActiveChapterIndex(idx)}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
+                  border: 'none',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.625rem 0.85rem',
+                  fontSize: '0.825rem',
+                  fontWeight: activeChapterIndex === idx ? 600 : 500,
+                  backgroundColor: activeChapterIndex === idx ? 'var(--brand-primary-glow)' : 'transparent',
+                  color: activeChapterIndex === idx ? 'white' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  if (activeChapterIndex !== idx) {
+                    e.target.style.backgroundColor = 'rgba(255,255,255,0.03)';
+                    e.target.style.color = 'white';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeChapterIndex !== idx) {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.color = 'var(--text-secondary)';
+                  }
+                }}
+              >
+                {ch.title}
+              </button>
+            ))}
+          </div>
+
+          {/* Right Content Viewer */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div className="glass-panel" style={{ padding: '2rem', minHeight: '400px' }}>
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'white', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.75rem', marginBottom: '1.5rem' }}>
+                {activeChapter.title}
+              </h2>
+              <div className="course-text-content">
+                {renderMarkdown(activeChapter.content)}
+              </div>
+            </div>
+
+            {/* Previous / Next buttons */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button
+                onClick={() => setActiveChapterIndex(prev => Math.max(0, prev - 1))}
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                disabled={activeChapterIndex === 0}
+              >
+                <ChevronLeft size={16} /> Previous
+              </button>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                Chapter {activeChapterIndex + 1} of {courseMaterial.chapters.length}
+              </span>
+              <button
+                onClick={() => setActiveChapterIndex(prev => Math.min(courseMaterial.chapters.length - 1, prev + 1))}
+                className="btn btn-primary"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                disabled={activeChapterIndex === courseMaterial.chapters.length - 1}
+              >
+                Next <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -188,6 +451,23 @@ const RegisteredUnits = () => {
                             onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
                           >
                             Drop
+                          </button>
+                        ) : reg.status === 'approved' ? (
+                          <button 
+                            onClick={() => {
+                              setSelectedUnit(reg.unit_code);
+                              setActiveChapterIndex(0);
+                            }}
+                            className="btn btn-secondary"
+                            style={{
+                              padding: '0.25rem 0.625rem',
+                              fontSize: '0.75rem',
+                              backgroundColor: 'var(--brand-primary-glow)',
+                              color: 'white',
+                              border: '1px solid var(--brand-primary)'
+                            }}
+                          >
+                            Study Course
                           </button>
                         ) : (
                           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Locked</span>

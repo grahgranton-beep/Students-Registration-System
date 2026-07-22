@@ -31,7 +31,7 @@ const BottomNav = () => {
           to={to}
           className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}
         >
-          <Icon size={22} strokeWidth={isActive => isActive ? 2.5 : 1.75} />
+          <Icon size={22} strokeWidth={1.75} />
           <span>{label}</span>
         </NavLink>
       ))}

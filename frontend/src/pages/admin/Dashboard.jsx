@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Users, Clock, CheckCircle2, AlertTriangle, ShieldCheck, Mail } from 'lucide-react';
+import Toast from '../../components/Toast';
+import { Users, Clock, CheckCircle2, AlertTriangle, ShieldCheck, Mail, Check, X, ShieldAlert } from 'lucide-react';
 
 // ── Inline Bar Chart ──────────────────────────────────────────────────────
 const BarChart = ({ data }) => {
@@ -33,34 +34,102 @@ const AdminDashboard = () => {
   });
   const [logs, setLogs] = useState([]);
   const [students, setStudents] = useState([]);
+  const [pendingRegs, setPendingRegs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [chartView, setChartView] = useState('monthly');
   const [searchId, setSearchId] = useState('');
 
-  useEffect(() => {
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState('info');
+
+  const showToast = (msg, type = 'info') => {
+    setToastMessage(msg);
+    setToastType(type);
+  };
+
+  const fetchDashboardData = async () => {
     if (!token) return;
-    Promise.all([
-      fetch('http://localhost:5000/api/dashboard/stats', {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(r => r.json()),
-      fetch('http://localhost:5000/api/students', {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(r => r.json()),
-    ])
-      .then(([dashData, stuData]) => {
-        if (dashData.stats) setStats(dashData.stats);
-        if (dashData.recent_logs) setLogs(dashData.recent_logs);
-        if (Array.isArray(stuData)) setStudents(stuData);
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    try {
+      setLoading(true);
+      const [dashRes, stuRes, regsRes] = await Promise.all([
+        fetch('http://localhost:5000/api/dashboard/stats', {
+          headers: { Authorization: `Bearer ${token}` },
+        }).then(r => r.json()),
+        fetch('http://localhost:5000/api/students', {
+          headers: { Authorization: `Bearer ${token}` },
+        }).then(r => r.json()),
+        fetch('http://localhost:5000/api/registrations', {
+          headers: { Authorization: `Bearer ${token}` },
+        }).then(r => r.json()),
+      ]);
+
+      if (dashRes.stats) setStats(dashRes.stats);
+      if (dashRes.recent_logs) setLogs(dashRes.recent_logs);
+      if (Array.isArray(stuRes)) setStudents(stuRes);
+      if (Array.isArray(regsRes)) {
+        setPendingRegs(regsRes.filter(r => r.status === 'pending'));
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error loading registrar data', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
   }, [token]);
 
+  const handleUpdateStatus = async (regId, newStatus) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/registrations/${regId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        showToast(`Registration request ${newStatus.toUpperCase()} successfully!`, 'success');
+        fetchDashboardData();
+      } else {
+        const errData = await res.json();
+        showToast(errData.error || 'Failed to update registration status', 'error');
+      }
+    } catch {
+      showToast('Connection error while updating status', 'error');
+    }
+  };
+
+  const handleBulkApprove = async () => {
+    if (pendingRegs.length === 0) return;
+    try {
+      const ids = pendingRegs.map(r => r.id);
+      const res = await fetch('http://localhost:5000/api/registrations/bulk-status', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ ids, status: 'approved' }),
+      });
+      if (res.ok) {
+        showToast(`Approved all ${ids.length} pending registration(s)!`, 'success');
+        fetchDashboardData();
+      } else {
+        showToast('Bulk approval failed', 'error');
+      }
+    } catch {
+      showToast('Connection error during bulk approval', 'error');
+    }
+  };
+
   const approvalRate = stats.total_students > 0
-    ? Math.round(((stats.total_students - stats.pending_registrations) / stats.total_students) * 100)
+    ? Math.round(((stats.total_students - pendingRegs.length) / stats.total_students) * 100)
     : 92;
 
-  // Mock department chart data
   const deptChart = [
     { label: 'CS', value: 85 },
     { label: 'ENG', value: 62 },
@@ -70,7 +139,6 @@ const AdminDashboard = () => {
     { label: 'ART', value: 18 },
   ];
 
-  // Activity icon helper
   const logIcon = action => {
     if (!action) return <Mail size={15} color="#6b7280" />;
     const a = action.toLowerCase();
@@ -95,8 +163,9 @@ const AdminDashboard = () => {
     if (!searchId) return true;
     const q = searchId.toLowerCase();
     return (
-      s.student_id?.toLowerCase().includes(q) ||
-      s.full_name?.toLowerCase().includes(q) ||
+      s.registration_no?.toLowerCase().includes(q) ||
+      s.first_name?.toLowerCase().includes(q) ||
+      s.last_name?.toLowerCase().includes(q) ||
       s.email?.toLowerCase().includes(q)
     );
   });
@@ -115,110 +184,205 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingBottom: '1rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', paddingBottom: '2rem' }}>
       {/* Header */}
       <div>
         <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '0.2rem' }}>
           Registrar Overview
         </h1>
         <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-          Institutional performance and real-time registration metrics.
+          Institutional performance and real-time registration approvals.
         </p>
       </div>
 
-      {/* ── Stat: Total Students ── */}
-      <div className="card" style={{ padding: '1.25rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.5rem' }}>
-              Total Students
+      {/* ── Stat Cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+        {/* Total Students */}
+        <div className="card" style={{ padding: '1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.5rem' }}>
+                Total Students
+              </div>
+              <div style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1 }}>
+                {stats.total_students.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.4rem', fontWeight: 500 }}>
+                ↑ Active Enrolments
+              </div>
             </div>
-            <div style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1 }}>
-              {stats.total_students.toLocaleString()}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.4rem', fontWeight: 500 }}>
-              ↑ +4% from last term
-            </div>
-          </div>
-          <div style={{
-            width: 40, height: 40, borderRadius: 10,
-            background: '#f3f4f6',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Users size={20} color="#6b7280" />
-          </div>
-        </div>
-      </div>
-
-      {/* ── Stat: Pending Registrations ── */}
-      <div className="card" style={{ padding: '1.25rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.5rem' }}>
-              Pending Registrations
-            </div>
-            <div style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1 }}>
-              {stats.pending_registrations}
-            </div>
-            <span style={{
-              display: 'inline-block', marginTop: '0.4rem',
-              background: '#fee2e2', color: '#dc2626',
-              fontSize: '0.68rem', fontWeight: 700, padding: '0.15rem 0.5rem',
-              borderRadius: 999, letterSpacing: '0.04em',
+            <div style={{
+              width: 40, height: 40, borderRadius: 10,
+              background: '#f3f4f6',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              Requires Action
-            </span>
+              <Users size={20} color="#6b7280" />
+            </div>
           </div>
-          <div style={{
-            width: 40, height: 40, borderRadius: 10,
-            background: '#fee2e2',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Clock size={20} color="#dc2626" />
+        </div>
+
+        {/* Pending Registrations */}
+        <div className="card" style={{ padding: '1.25rem', border: pendingRegs.length > 0 ? '1.5px solid #fca5a5' : '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.5rem' }}>
+                Pending Registrations
+              </div>
+              <div style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1, color: pendingRegs.length > 0 ? '#dc2626' : 'inherit' }}>
+                {pendingRegs.length}
+              </div>
+              <span style={{
+                display: 'inline-block', marginTop: '0.4rem',
+                background: pendingRegs.length > 0 ? '#fee2e2' : '#f3f4f6',
+                color: pendingRegs.length > 0 ? '#dc2626' : '#6b7280',
+                fontSize: '0.68rem', fontWeight: 700, padding: '0.15rem 0.5rem',
+                borderRadius: 999, letterSpacing: '0.04em',
+              }}>
+                {pendingRegs.length > 0 ? 'Requires Action' : 'All Clear'}
+              </span>
+            </div>
+            <div style={{
+              width: 40, height: 40, borderRadius: 10,
+              background: pendingRegs.length > 0 ? '#fee2e2' : '#f3f4f6',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Clock size={20} color={pendingRegs.length > 0 ? '#dc2626' : '#6b7280'} />
+            </div>
+          </div>
+        </div>
+
+        {/* Approval Rate */}
+        <div className="card" style={{ padding: '1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+            <div>
+              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.5rem' }}>
+                Approval Rate
+              </div>
+              <div style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1 }}>
+                {approvalRate}%
+              </div>
+            </div>
+            <div style={{
+              width: 40, height: 40, borderRadius: 10,
+              background: '#dbeafe',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <CheckCircle2 size={20} color="#2563eb" />
+            </div>
+          </div>
+          <div style={{ height: 6, borderRadius: 999, background: '#e5e7eb', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', borderRadius: 999,
+              background: '#2563eb',
+              width: `${approvalRate}%`,
+              transition: 'width 0.8s ease',
+            }} />
           </div>
         </div>
       </div>
 
-      {/* ── Stat: Approval Rate ── */}
-      <div className="card" style={{ padding: '1.25rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+      {/* ── 1. REGISTRATION APPROVAL QUEUE (ADMIN FUNCTIONALITY) ── */}
+      <div className="card" style={{ padding: '1.25rem', border: '1.5px solid var(--border)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
           <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.5rem' }}>
-              Approval Rate
-            </div>
-            <div style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1 }}>
-              {approvalRate}%
-            </div>
+            <h3 style={{ fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
+              <ShieldAlert size={18} color="#d97706" />
+              Pending Unit Registration Approvals ({pendingRegs.length})
+            </h3>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0' }}>
+              Review student unit enrollment requests and accept or reject them.
+            </p>
           </div>
-          <div style={{
-            width: 40, height: 40, borderRadius: 10,
-            background: '#dbeafe',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <CheckCircle2 size={20} color="#2563eb" />
+
+          {pendingRegs.length > 0 && (
+            <button
+              onClick={handleBulkApprove}
+              style={{
+                background: '#059669', color: 'white', border: 'none',
+                borderRadius: 8, padding: '0.45rem 0.85rem',
+                fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '0.35rem',
+              }}
+            >
+              <Check size={15} /> Approve All Pending ({pendingRegs.length})
+            </button>
+          )}
+        </div>
+
+        {pendingRegs.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '2rem 1rem', background: '#f9fafb', borderRadius: 8, border: '1px dashed #e5e7eb' }}>
+            <CheckCircle2 size={32} color="#10b981" style={{ marginBottom: '0.5rem' }} />
+            <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', margin: 0 }}>All unit registrations are approved!</p>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>When students register for units, their requests will appear here for your approval.</p>
           </div>
-        </div>
-        {/* Progress bar */}
-        <div style={{ height: 6, borderRadius: 999, background: '#e5e7eb', overflow: 'hidden' }}>
-          <div style={{
-            height: '100%', borderRadius: 999,
-            background: '#2563eb',
-            width: `${approvalRate}%`,
-            transition: 'width 0.8s ease',
-          }} />
-        </div>
+        ) : (
+          <div className="table-container">
+            <table className="custom-table">
+              <thead>
+                <tr>
+                  <th>Student Reg No</th>
+                  <th>Student Name</th>
+                  <th>Unit Code</th>
+                  <th>Unit Name</th>
+                  <th>Credits</th>
+                  <th style={{ textAlign: 'center', width: 160 }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingRegs.map(reg => (
+                  <tr key={reg.id}>
+                    <td style={{ fontWeight: 700 }}>{reg.student_reg_no || 'N/A'}</td>
+                    <td style={{ fontWeight: 600 }}>{reg.student_name || 'Student'}</td>
+                    <td>
+                      <span style={{ fontWeight: 700, background: '#eff6ff', color: '#1d4ed8', padding: '0.15rem 0.45rem', borderRadius: 6, fontSize: '0.75rem' }}>
+                        {reg.unit_code}
+                      </span>
+                    </td>
+                    <td>{reg.unit_name}</td>
+                    <td>{reg.unit_credits} Credits</td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => handleUpdateStatus(reg.id, 'approved')}
+                          style={{
+                            background: '#10b981', color: 'white', border: 'none',
+                            borderRadius: 6, padding: '0.35rem 0.65rem',
+                            fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '0.2rem',
+                          }}
+                          title="Approve Unit Registration"
+                        >
+                          <Check size={14} /> Accept
+                        </button>
+                        <button
+                          onClick={() => handleUpdateStatus(reg.id, 'rejected')}
+                          style={{
+                            background: '#ef4444', color: 'white', border: 'none',
+                            borderRadius: 6, padding: '0.35rem 0.65rem',
+                            fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '0.2rem',
+                          }}
+                          title="Reject Unit Registration"
+                        >
+                          <X size={14} /> Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* ── Bar Chart ── */}
       <div className="card" style={{ padding: '1.25rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
           <h3 style={{ fontSize: '0.9rem', fontWeight: 700 }}>
-            Registration Progress<br />by Department
+            Registration Progress by Department
           </h3>
-          <div style={{
-            display: 'flex', background: '#f3f4f6',
-            borderRadius: 8, padding: 3,
-          }}>
+          <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: 8, padding: 3 }}>
             {['weekly', 'monthly'].map(v => (
               <button
                 key={v}
@@ -240,18 +404,14 @@ const AdminDashboard = () => {
         <BarChart data={deptChart} />
       </div>
 
-      {/* ── Recent Activity ── */}
+      {/* ── Recent Activity Logs ── */}
       <div className="card" style={{ padding: '1.25rem' }}>
-        <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '1rem' }}>Recent Activity</h3>
+        <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '1rem' }}>Recent System Audit Activity</h3>
         {logs.length === 0 ? (
-          <div style={{
-            display: 'flex', flexDirection: 'column', gap: '0.75rem',
-          }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {[
-              { action: 'register', text: 'New registration from Student ID 2024-001', time: '2 minutes ago' },
-              { action: 'grade approv', text: 'Grade approved for Course CS-402', time: '5 minutes ago' },
-              { action: 'conflict flag exceed', text: 'Flagged conflict: Enrolment limit exceeded', time: '1 hour ago' },
-              { action: 'transcript request', text: 'Transcript request from Alumna J. Doe', time: '3 hours ago' },
+              { action: 'register', text: 'New unit registration submitted by John Doe', time: 'Just now' },
+              { action: 'approv', text: 'Registration approved for SE201', time: '10 minutes ago' },
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
                 <div style={{
@@ -291,50 +451,49 @@ const AdminDashboard = () => {
             ))}
           </div>
         )}
-        <button style={{
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: '#6366f1', fontSize: '0.8rem', fontWeight: 600,
-          fontFamily: 'var(--font-primary)', marginTop: '1rem', padding: 0,
-        }}>
-          View All Activity
-        </button>
       </div>
 
-      {/* ── Pending Verifications ── */}
+      {/* ── Student Master Records List ── */}
       <div className="card" style={{ padding: '1.25rem' }}>
-        <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.875rem' }}>Pending Verifications</h3>
-        {/* Search */}
+        <h3 style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.875rem' }}>Registered Students List</h3>
         <div style={{ position: 'relative', marginBottom: '0.875rem' }}>
           <input
             className="form-input"
-            placeholder="Search ID…"
+            placeholder="Search student by name, reg number, or email..."
             value={searchId}
             onChange={e => setSearchId(e.target.value)}
             style={{ fontSize: '0.85rem', padding: '0.6rem 0.875rem' }}
           />
         </div>
-        {/* Table */}
         <div className="table-container">
           <table className="custom-table">
             <thead>
               <tr>
+                <th>Reg No</th>
                 <th>Student Name</th>
-                <th>Student ID</th>
-                <th>Major</th>
+                <th>Email</th>
+                <th>Program</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {filteredStudents.slice(0, 5).map(s => (
+              {filteredStudents.slice(0, 10).map(s => (
                 <tr key={s.id}>
-                  <td style={{ fontWeight: 500 }}>{s.full_name || '—'}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{s.student_id || '—'}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{s.program_name || '—'}</td>
+                  <td style={{ fontWeight: 700 }}>{s.registration_no || '—'}</td>
+                  <td style={{ fontWeight: 500 }}>{s.first_name} {s.last_name}</td>
+                  <td style={{ color: 'var(--text-secondary)' }}>{s.email || '—'}</td>
+                  <td style={{ color: 'var(--text-secondary)' }}>{s.program_code || s.program_name || '—'}</td>
+                  <td>
+                    <span className={`badge badge-${s.status === 'active' ? 'approved' : 'rejected'}`}>
+                      {s.status}
+                    </span>
+                  </td>
                 </tr>
               ))}
               {filteredStudents.length === 0 && (
                 <tr>
-                  <td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '1.5rem' }}>
-                    No results found.
+                  <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '1.5rem' }}>
+                    No student records found.
                   </td>
                 </tr>
               )}
@@ -342,6 +501,10 @@ const AdminDashboard = () => {
           </table>
         </div>
       </div>
+
+      {toastMessage && (
+        <Toast message={toastMessage} type={toastType} onClose={() => setToastMessage('')} />
+      )}
     </div>
   );
 };
