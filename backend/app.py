@@ -24,10 +24,14 @@ def create_app(config_class=Config):
     # Configure JWT
     jwt = JWTManager(app)
     
-    # Check MySQL connectivity and create database if missing
-    # Otherwise fallback to SQLite
-    db_uri = app.config['MYSQL_URI']
-    if not app.config.get('TESTING'):
+    # Check if DATABASE_URL or SUPABASE_DB_URL is provided in environment
+    db_url = os.environ.get('DATABASE_URL') or os.environ.get('SUPABASE_DB_URL')
+    if db_url:
+        if db_url.startswith('postgres://'):
+            db_url = db_url.replace('postgres://', 'postgresql://', 1)
+        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+        print(f"Connected to external database (Supabase / Postgres)")
+    elif not app.config.get('TESTING'):
         try:
             # Connect to MySQL server to check availability and create database
             conn = pymysql.connect(
@@ -40,7 +44,7 @@ def create_app(config_class=Config):
             cursor = conn.cursor()
             cursor.execute(f"CREATE DATABASE IF NOT EXISTS {app.config['MYSQL_DB']}")
             conn.close()
-            app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+            app.config['SQLALCHEMY_DATABASE_URI'] = app.config['MYSQL_URI']
             print(f"Successfully connected to MySQL database: {app.config['MYSQL_DB']}")
         except Exception as e:
             print(f"WARNING: MySQL database connection failed: {e}")
@@ -324,6 +328,7 @@ def seed_database():
     
     print("Database seeding / checks completed.")
 
+app = create_app()
+
 if __name__ == '__main__':
-    app = create_app()
     app.run(host='0.0.0.0', port=5000, debug=True)
