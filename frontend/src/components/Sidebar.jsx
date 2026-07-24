@@ -8,8 +8,7 @@ import {
   Building2, 
   FileText, 
   UserCircle, 
-  LogOut,
-  ShieldAlert
+  LogOut
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {

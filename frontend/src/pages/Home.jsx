@@ -14,7 +14,7 @@ const Home = () => {
       justifyContent: 'center',
       alignItems: 'center',
       padding: '2rem',
-      background: 'radial-gradient(circle at top, rgba(99, 102, 241, 0.15) 0%, transparent 60%)',
+      background: 'radial-gradient(ellipse at top, #1e1b4b 0%, #0f172a 70%)',
       position: 'relative',
       overflow: 'hidden'
     }}>

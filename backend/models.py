@@ -18,8 +18,8 @@ class User(db.Model):
     password_hash = db.Column(db.String(128), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     role = db.Column(db.String(20), nullable=False, default='student') # 'student' or 'admin'
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     student_profile = db.relationship('Student', backref='user', uselist=False, cascade="all, delete-orphan")
     audit_logs = db.relationship('AuditLog', backref='user', cascade="all, delete-orphan")
@@ -45,7 +45,7 @@ class Department(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(10), unique=True, nullable=False) # e.g. "CS"
     name = db.Column(db.String(100), unique=True, nullable=False) # e.g. "Computer Science"
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     programs = db.relationship('Program', backref='department', cascade="all, delete-orphan")
 
@@ -63,7 +63,7 @@ class Program(db.Model):
     code = db.Column(db.String(10), unique=True, nullable=False) # e.g. "BSE"
     name = db.Column(db.String(100), nullable=False) # e.g. "B.Sc. Software Engineering"
     department_id = db.Column(db.Integer, db.ForeignKey('department.id', ondelete='CASCADE'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     students = db.relationship('Student', backref='program', cascade="all, delete-orphan")
     units = db.relationship('Unit', backref='program', cascade="all, delete-orphan")
@@ -117,7 +117,7 @@ class AcademicSession(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False) # e.g. "2025/2026 Semester 1"
     is_active = db.Column(db.Boolean, default=False, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     registrations = db.relationship('Registration', backref='session', cascade="all, delete-orphan")
 
@@ -170,8 +170,8 @@ class Registration(db.Model):
     unit_id = db.Column(db.Integer, db.ForeignKey('unit.id', ondelete='CASCADE'), nullable=False)
     session_id = db.Column(db.Integer, db.ForeignKey('academic_session.id', ondelete='CASCADE'), nullable=False)
     status = db.Column(db.String(20), nullable=False, default='pending') # 'pending', 'approved', 'rejected'
-    registered_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    registered_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     __table_args__ = (
         db.UniqueConstraint('student_id', 'unit_id', 'session_id', name='uq_student_unit_session'),
@@ -202,7 +202,7 @@ class AuditLog(db.Model):
     target_table = db.Column(db.String(50), nullable=True) # e.g. "registration"
     details = db.Column(db.Text, nullable=True) # JSON details
     ip_address = db.Column(db.String(45), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
     def to_dict(self):
         return {

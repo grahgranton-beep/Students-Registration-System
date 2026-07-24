@@ -11,7 +11,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'students-registration-system-super-secret-key-12345')
     
     # JWT Settings
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'jwt-super-secret-key-67890')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'jwt-super-secret-key-67890-secure-32-byte-length-key')
     JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(hours=4)
     
     # Database Settings - default to MySQL under XAMPP, fallback to SQLite

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
 import {
@@ -73,7 +73,6 @@ const StudentDashboard = () => {
   const activeSession = sessions.find(s => s.is_active) || sessions[0];
   const approvedCount = registrations.filter(r => r.status === 'approved').length;
   const pendingCount = registrations.filter(r => r.status === 'pending').length;
-  const totalTarget = 6;
 
   const registrationStatus = pendingCount > 0 ? 'pending' : approvedCount > 0 ? 'active' : 'not-started';
 

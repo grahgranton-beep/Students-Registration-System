@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
 import { Users, Clock, CheckCircle2, AlertTriangle, ShieldCheck, Mail, Check, X, ShieldAlert, RotateCcw, Filter } from 'lucide-react';
@@ -48,7 +48,7 @@ const AdminDashboard = () => {
     setToastType(type);
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     if (!token) return;
     try {
       setLoading(true);
@@ -72,15 +72,16 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       console.error(err);
-      showToast('Error loading registrar data', 'error');
+      setToastMessage('Error loading registrar data');
+      setToastType('error');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchDashboardData();
-  }, [token]);
+  }, [fetchDashboardData]);
 
   const handleUpdateStatus = async (regId, newStatus) => {
     try {
@@ -369,7 +370,6 @@ const AdminDashboard = () => {
               style={{
                 padding: '0.3rem 0.65rem',
                 borderRadius: 6,
-                border: 'none',
                 cursor: 'pointer',
                 fontSize: '0.75rem',
                 fontWeight: 700,

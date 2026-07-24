@@ -223,7 +223,37 @@ def seed_database():
     if not gd202:
         gd202 = Unit(code="GD202", name="UI/UX Prototyping", credits=3, program_id=bgd_prog.id, description="User experience research, wireframing, and interactive prototyping in Figma.")
         db.session.add(gd202)
-    
+
+    # BDS (Data Science) units
+    bds_prog = Program.query.filter_by(code="BDS").first()
+    if bds_prog:
+        ds101 = Unit.query.filter_by(code="DS101").first()
+        if not ds101:
+            db.session.add(Unit(code="DS101", name="Data Analysis with Python", credits=3, program_id=bds_prog.id, description="Exploratory data analysis, Pandas, NumPy, and Data Visualization."))
+        ds201 = Unit.query.filter_by(code="DS201").first()
+        if not ds201:
+            db.session.add(Unit(code="DS201", name="Data Mining & Warehousing", credits=3, program_id=bds_prog.id, description="Data extraction, ETL pipelines, and SQL/NoSQL warehousing."))
+        ds301 = Unit.query.filter_by(code="DS301").first()
+        if not ds301:
+            db.session.add(Unit(code="DS301", name="Big Data Analytics & Spark", credits=4, program_id=bds_prog.id, description="Distributed data processing, PySpark, and Cloud Data Analytics."))
+
+    # BCY (Cyber Security) units
+    bcy_prog = Program.query.filter_by(code="BCY").first()
+    if bcy_prog:
+        cy101 = Unit.query.filter_by(code="CY101").first()
+        if not cy101:
+            db.session.add(Unit(code="CY101", name="Network Security & Firewalls", credits=3, program_id=bcy_prog.id, description="Network defense, firewall rules, IDS/IPS, and SSL/TLS security."))
+        cy201 = Unit.query.filter_by(code="CY201").first()
+        if not cy201:
+            db.session.add(Unit(code="CY201", name="Ethical Hacking & Pen Testing", credits=4, program_id=bcy_prog.id, description="Vulnerability assessment, penetration testing techniques, and threat modeling."))
+
+    # BEE (Electrical Engineering) units
+    bee_prog = Program.query.filter_by(code="BEE").first()
+    if bee_prog:
+        ee101 = Unit.query.filter_by(code="EE101").first()
+        if not ee101:
+            db.session.add(Unit(code="EE101", name="Electrical Circuit Analysis", credits=3, program_id=bee_prog.id, description="Ohm's law, Kirchhoff's laws, AC/DC analysis, and circuit design."))
+
     db.session.commit()
     
     # 5. Create Users (Admin and Student)

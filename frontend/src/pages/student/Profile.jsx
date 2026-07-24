@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Toast from '../../components/Toast';
-import { User, Mail, Phone, Lock, Save, Calendar, LogOut } from 'lucide-react';
+import { Mail, Phone, Lock, Save, LogOut } from 'lucide-react';
 
 const Profile = () => {
   const { student, user, updateProfile, logout } = useAuth();

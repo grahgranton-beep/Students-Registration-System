@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
-import { FileText, FileSpreadsheet, Download, RefreshCw } from 'lucide-react';
+import { FileText, FileSpreadsheet, Download } from 'lucide-react';
 
 const Reports = () => {
   const { token } = useAuth();

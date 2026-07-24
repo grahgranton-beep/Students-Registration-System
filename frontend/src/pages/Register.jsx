@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { GraduationCap, User, Mail, Lock, Phone, UserCheck, Calendar, Hash, ShieldCheck, KeyRound } from 'lucide-react';
+import { GraduationCap, User, Mail, Lock, Phone, UserCheck, Hash, ShieldCheck, KeyRound } from 'lucide-react';
 
 const Register = () => {
   const { registerStudent, registerAdmin, user } = useAuth();
@@ -120,7 +120,7 @@ const Register = () => {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '2rem',
-      background: 'radial-gradient(circle at top, rgba(99, 102, 241, 0.1) 0%, transparent 60%)'
+      background: 'radial-gradient(ellipse at top, #1e1b4b 0%, #0f172a 70%)'
     }}>
       <div className="glass-panel animate-fade-in" style={{
         width: '100%',

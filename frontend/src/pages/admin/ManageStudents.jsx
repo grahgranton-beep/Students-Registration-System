@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
 import { Users, Check, X, Search, Plus, Edit2, Trash2, ShieldAlert } from 'lucide-react';
@@ -38,7 +38,7 @@ const ManageStudents = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('info');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!token) return;
     try {
       setLoading(true);
@@ -65,15 +65,16 @@ const ManageStudents = () => {
       
     } catch (err) {
       console.error(err);
-      showToast("Error loading registrar data", "error");
+      setToastMessage("Error loading registrar data");
+      setToastType("error");
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchData();
-  }, [token]);
+  }, [fetchData]);
 
   const showToast = (msg, type = 'info') => {
     setToastMessage(msg);

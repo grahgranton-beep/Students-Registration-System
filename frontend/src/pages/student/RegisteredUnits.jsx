@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
 import { Calendar, FileText, Download, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -18,7 +18,7 @@ const RegisteredUnits = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('info');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!token) return;
     try {
       setLoading(true);
@@ -43,11 +43,11 @@ const RegisteredUnits = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchData();
-  }, [token]);
+  }, [fetchData]);
 
   const handleDownloadSlip = () => {
     if (!student) return;
@@ -162,7 +162,7 @@ const RegisteredUnits = () => {
         if (!inList) {
           inList = true;
         }
-        const cleanLine = line.trim().replace(/^[\*\-]\s+/, '');
+        const cleanLine = line.trim().replace(/^[* -]\s+/, '');
         
         // Inline styling for bold in list items
         const parts = cleanLine.split('**');

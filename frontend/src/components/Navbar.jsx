@@ -57,7 +57,7 @@ const Navbar = () => {
             letterSpacing: '-0.01em',
           }}
         >
-          Academic Registrar
+          Apex University Portal
         </span>
       </div>
 
@@ -102,8 +102,8 @@ const Navbar = () => {
           style={{
             padding: '0.25rem 0.6rem',
             borderRadius: 8,
-            background: '#f3f4f6',
-            color: '#111827',
+            background: '#334155',
+            color: '#f8fafc',
             fontSize: '0.75rem',
             fontWeight: 700,
             display: 'flex',
@@ -116,7 +116,7 @@ const Navbar = () => {
               width: 22,
               height: 22,
               borderRadius: '50%',
-              background: '#111827',
+              background: '#6366f1',
               color: 'white',
               display: 'flex',
               alignItems: 'center',
@@ -135,15 +135,15 @@ const Navbar = () => {
           onClick={handleLogout}
           title="Sign Out"
           style={{
-            background: '#fee2e2',
-            border: 'none',
+            background: 'rgba(239, 68, 68, 0.15)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
             cursor: 'pointer',
             padding: '0.35rem 0.65rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.35rem',
             borderRadius: 8,
-            color: '#dc2626',
+            color: '#ef4444',
             fontSize: '0.78rem',
             fontWeight: 700,
             transition: 'opacity 0.15s',

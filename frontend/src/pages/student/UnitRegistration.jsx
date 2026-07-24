@@ -245,8 +245,8 @@ const UnitRegistration = () => {
               key={unit.id}
               onClick={() => !isDisabled && handleToggleSelect(unit)}
               style={{
-                background: isSelected ? '#f0f9ff' : '#ffffff',
-                border: `1.5px solid ${isSelected ? '#93c5fd' : '#e5e7eb'}`,
+                background: isSelected ? 'rgba(99, 102, 241, 0.15)' : '#1e293b',
+                border: `1.5px solid ${isSelected ? '#818cf8' : '#334155'}`,
                 borderRadius: 12,
                 padding: '1rem',
                 cursor: isDisabled ? 'default' : 'pointer',
@@ -324,8 +324,8 @@ const UnitRegistration = () => {
         position: 'fixed',
         bottom: 'var(--bottom-nav-height)',
         left: 0, right: 0,
-        background: '#f3f4f6',
-        borderTop: '1px solid var(--border)',
+        background: '#1e293b',
+        borderTop: '1px solid #334155',
         padding: '0.875rem 1.25rem',
         display: 'flex',
         alignItems: 'center',

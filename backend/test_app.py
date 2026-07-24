@@ -8,7 +8,7 @@ from models import User, Student, Department, Program, Unit, AcademicSession, Re
 class TestConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
-    JWT_SECRET_KEY = 'test-jwt-secret'
+    JWT_SECRET_KEY = 'test-jwt-secret-key-minimum-32-bytes'
 
 class StudentRegistrationSystemTestCase(unittest.TestCase):
     def setUp(self):

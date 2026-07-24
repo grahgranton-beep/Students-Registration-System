@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
 import { BookOpen, FolderOpen, Plus, Edit2, Trash2 } from 'lucide-react';
@@ -28,7 +28,7 @@ const ManageCourses = () => {
   const [toastMessage, setToastMessage] = useState('');
   const [toastType, setToastType] = useState('info');
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!token) return;
     try {
       setLoading(true);
@@ -54,15 +54,16 @@ const ManageCourses = () => {
       setDepartments(deptData);
     } catch (err) {
       console.error(err);
-      showToast("Error loading course schemas", "error");
+      setToastMessage("Error loading course schemas");
+      setToastType("error");
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchData();
-  }, [token]);
+  }, [fetchData]);
 
   const showToast = (msg, type = 'info') => {
     setToastMessage(msg);
@@ -339,8 +340,7 @@ const ManageCourses = () => {
         <div style={{
           position: 'fixed', top: 0, right: 0, bottom: 0, left: 0,
           backgroundColor: 'rgba(9, 13, 22, 0.8)', backdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: '1.5rem',
-          justifyContent: 'center'
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999, padding: '1.5rem'
         }}>
           <form onSubmit={handleProgSubmit} className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: 450, padding: '2rem' }}>
             <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'white', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.5rem', marginBottom: '1.25rem' }}>

@@ -66,7 +66,7 @@ def create_department():
 @jwt_required()
 @role_required('admin')
 def update_department(id):
-    dep = Department.query.get_or_404(id)
+    dep = db.get_or_404(Department, id)
     data = request.get_json() or {}
     
     if data.get('code'):
@@ -85,7 +85,7 @@ def update_department(id):
 @jwt_required()
 @role_required('admin')
 def delete_department(id):
-    dep = Department.query.get_or_404(id)
+    dep = db.get_or_404(Department, id)
     db.session.delete(dep)
     db.session.commit()
     log_activity(int(get_jwt_identity()), "delete_department", "department", f"Deleted department ID: {id}")
@@ -112,7 +112,7 @@ def create_program():
         return jsonify({"error": "Code, name, and department_id are required"}), 400
     if Program.query.filter_by(code=code).first():
         return jsonify({"error": "Program code already exists"}), 400
-    if not Department.query.get(department_id):
+    if not db.session.get(Department, department_id):
         return jsonify({"error": "Department not found"}), 400
         
     prog = Program(code=code, name=name, department_id=int(department_id))
@@ -126,7 +126,7 @@ def create_program():
 @jwt_required()
 @role_required('admin')
 def update_program(id):
-    prog = Program.query.get_or_404(id)
+    prog = db.get_or_404(Program, id)
     data = request.get_json() or {}
     
     if data.get('code'):
@@ -137,7 +137,7 @@ def update_program(id):
     if data.get('name'):
         prog.name = data['name']
     if data.get('department_id'):
-        if not Department.query.get(data['department_id']):
+        if not db.session.get(Department, data['department_id']):
             return jsonify({"error": "Department not found"}), 400
         prog.department_id = int(data['department_id'])
         
@@ -149,7 +149,7 @@ def update_program(id):
 @jwt_required()
 @role_required('admin')
 def delete_program(id):
-    prog = Program.query.get_or_404(id)
+    prog = db.get_or_404(Program, id)
     db.session.delete(prog)
     db.session.commit()
     log_activity(int(get_jwt_identity()), "delete_program", "program", f"Deleted program ID: {id}")
@@ -164,6 +164,9 @@ def get_units():
     program_id = request.args.get('program_id')
     if program_id:
         units = Unit.query.filter_by(program_id=int(program_id)).all()
+        if not units:
+            # Fallback: return all available units if custom program units are empty
+            units = Unit.query.all()
     else:
         units = Unit.query.all()
     return jsonify([u.to_dict() for u in units]), 200
@@ -183,7 +186,7 @@ def create_unit():
         return jsonify({"error": "Code, name, and program_id are required"}), 400
     if Unit.query.filter_by(code=code).first():
         return jsonify({"error": "Unit code already exists"}), 400
-    if not Program.query.get(program_id):
+    if not db.session.get(Program, program_id):
         return jsonify({"error": "Program not found"}), 400
         
     unit = Unit(
@@ -209,7 +212,7 @@ def create_unit():
 @jwt_required()
 @role_required('admin')
 def update_unit(id):
-    unit = Unit.query.get_or_404(id)
+    unit = db.get_or_404(Unit, id)
     data = request.get_json() or {}
     
     if data.get('code'):
@@ -220,7 +223,7 @@ def update_unit(id):
     if data.get('name'):
         unit.name = data['name']
     if data.get('program_id'):
-        if not Program.query.get(data['program_id']):
+        if not db.session.get(Program, data['program_id']):
             return jsonify({"error": "Program not found"}), 400
         unit.program_id = int(data['program_id'])
     if 'credits' in data:
@@ -247,7 +250,7 @@ def update_unit(id):
 @jwt_required()
 @role_required('admin')
 def delete_unit(id):
-    unit = Unit.query.get_or_404(id)
+    unit = db.get_or_404(Unit, id)
     db.session.delete(unit)
     db.session.commit()
     log_activity(int(get_jwt_identity()), "delete_unit", "unit", f"Deleted unit ID: {id}")
@@ -287,7 +290,7 @@ def create_session():
 @jwt_required()
 @role_required('admin')
 def activate_session(id):
-    sess = AcademicSession.query.get_or_404(id)
+    sess = db.get_or_404(AcademicSession, id)
     
     # Deactivate all others, activate this
     AcademicSession.query.update({AcademicSession.is_active: False})
@@ -301,7 +304,7 @@ def activate_session(id):
 @jwt_required()
 @role_required('admin')
 def delete_session(id):
-    sess = AcademicSession.query.get_or_404(id)
+    sess = db.get_or_404(AcademicSession, id)
     if sess.is_active:
         return jsonify({"error": "Cannot delete the active session"}), 400
     db.session.delete(sess)
@@ -322,7 +325,7 @@ def get_students():
 @api_bp.route('/students/<int:id>', methods=['GET'])
 @jwt_required()
 def get_student_by_id(id):
-    student = Student.query.get_or_404(id)
+    student = db.get_or_404(Student, id)
     
     # Check if student is querying their own data or is admin
     claims = get_jwt()
@@ -349,7 +352,7 @@ def create_student():
         return jsonify({"error": "Email already exists"}), 400
     if Student.query.filter_by(registration_no=data['registration_no']).first():
         return jsonify({"error": "Registration number already registered"}), 400
-    if not Program.query.get(data['program_id']):
+    if not db.session.get(Program, data['program_id']):
         return jsonify({"error": "Program not found"}), 400
         
     try:
@@ -385,7 +388,7 @@ def create_student():
 @api_bp.route('/students/<int:id>', methods=['PUT'])
 @jwt_required()
 def update_student(id):
-    student = Student.query.get_or_404(id)
+    student = db.get_or_404(Student, id)
     
     # Restrict edit to Admin or owner
     claims = get_jwt()
@@ -426,7 +429,7 @@ def update_student(id):
                     return jsonify({"error": "Registration number already in use"}), 400
                 student.registration_no = data['registration_no']
             if data.get('program_id'):
-                if not Program.query.get(data['program_id']):
+                if not db.session.get(Program, data['program_id']):
                     return jsonify({"error": "Program not found"}), 400
                 student.program_id = int(data['program_id'])
             if data.get('status'):
@@ -443,7 +446,7 @@ def update_student(id):
 @jwt_required()
 @role_required('admin')
 def delete_student(id):
-    student = Student.query.get_or_404(id)
+    student = db.get_or_404(Student, id)
     user = student.user
     db.session.delete(student)
     db.session.delete(user)
@@ -499,7 +502,7 @@ def register_units():
     if not unit_ids:
         return jsonify({"error": "No units selected for registration"}), 400
         
-    student = Student.query.get(student_id)
+    student = db.session.get(Student, student_id)
     if not student:
         return jsonify({"error": "Student not found"}), 404
     if student.status != 'active':
@@ -576,7 +579,7 @@ def register_units():
 @jwt_required()
 @role_required('admin')
 def update_registration_status(id):
-    reg = Registration.query.get_or_404(id)
+    reg = db.get_or_404(Registration, id)
     data = request.get_json() or {}
     status = data.get('status')
     
@@ -628,7 +631,7 @@ def bulk_update_registration_status():
 @api_bp.route('/registrations/<int:id>', methods=['DELETE'])
 @jwt_required()
 def drop_registration(id):
-    reg = Registration.query.get_or_404(id)
+    reg = db.get_or_404(Registration, id)
     claims = get_jwt()
     role = claims.get('role')
     user_id = int(get_jwt_identity())
