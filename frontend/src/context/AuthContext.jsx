@@ -45,6 +45,20 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
+  const parseResponse = async (res, defaultErrMsg) => {
+    const text = await res.text();
+    let data = {};
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(res.status >= 500 ? 'Server error. Please verify backend database connection.' : defaultErrMsg);
+    }
+    if (!res.ok) {
+      throw new Error(data.error || defaultErrMsg);
+    }
+    return data;
+  };
+
   const login = async (username, password) => {
     setLoading(true);
     try {
@@ -54,10 +68,7 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ username, password })
       });
       
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
+      const data = await parseResponse(res, 'Login failed');
       
       localStorage.setItem('token', data.access_token);
       setToken(data.access_token);
@@ -88,10 +99,7 @@ export const AuthProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(studentData)
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Registration failed');
-      }
+      await parseResponse(res, 'Registration failed');
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
@@ -105,10 +113,7 @@ export const AuthProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(adminData)
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Admin registration failed');
-      }
+      await parseResponse(res, 'Admin registration failed');
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
@@ -126,10 +131,7 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify(profileData)
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Profile update failed');
-      }
+      await parseResponse(res, 'Profile update failed');
       // Re-fetch profile details
       await fetchMe(token);
       return { success: true };

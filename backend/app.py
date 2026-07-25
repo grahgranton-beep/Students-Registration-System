@@ -86,7 +86,10 @@ def create_app(config_class=Config):
             db.create_all()
         except Exception as e:
             print(f"Notice: db.create_all skipped/warning: {e}")
-        seed_database()
+        try:
+            seed_database()
+        except Exception as e:
+            print(f"Notice: seed_database skipped/warning: {e}")
         
     return app
 

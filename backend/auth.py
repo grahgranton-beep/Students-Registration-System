@@ -42,30 +42,35 @@ def log_activity(user_id, action, target_table=None, details=None):
 def register():
     data = request.get_json() or {}
     
-    # Validation
-    required_fields = ['username', 'email', 'password', 'registration_no', 'first_name', 'last_name', 'program_id']
-    for field in required_fields:
-        if not data.get(field):
-            return jsonify({"error": f"Missing required field: {field}"}), 400
+    username = str(data.get('username', '')).strip()
+    email = str(data.get('email', '')).strip().lower()
+    password = str(data.get('password', '')).strip()
+    registration_no = str(data.get('registration_no', '')).strip()
+    first_name = str(data.get('first_name', '')).strip()
+    last_name = str(data.get('last_name', '')).strip()
+    program_id = data.get('program_id')
+    
+    if not username or not email or not password or not registration_no or not first_name or not last_name or not program_id:
+        return jsonify({"error": "Missing required registration fields"}), 400
             
     # Check if user already exists
-    if User.query.filter_by(username=data['username']).first():
+    if User.query.filter_by(username=username).first():
         return jsonify({"error": "Username already exists"}), 400
         
-    if User.query.filter_by(email=data['email']).first():
+    if User.query.filter_by(email=email).first():
         return jsonify({"error": "Email already exists"}), 400
         
-    if Student.query.filter_by(registration_no=data['registration_no']).first():
+    if Student.query.filter_by(registration_no=registration_no).first():
         return jsonify({"error": "Registration number already registered"}), 400
 
     try:
         # Create User
         user = User(
-            username=data['username'],
-            email=data['email'],
+            username=username,
+            email=email,
             role='student'
         )
-        user.set_password(data['password'])
+        user.set_password(password)
         db.session.add(user)
         db.session.flush() # Get user.id
         
@@ -73,20 +78,20 @@ def register():
         dob = None
         if data.get('date_of_birth'):
             try:
-                dob = datetime.datetime.strptime(data['date_of_birth'], '%Y-%m-%d').date()
+                dob = datetime.datetime.strptime(str(data['date_of_birth']).strip(), '%Y-%m-%d').date()
             except ValueError:
                 pass
         
         # Create Student Profile
         student = Student(
             user_id=user.id,
-            registration_no=data['registration_no'],
-            first_name=data['first_name'],
-            last_name=data['last_name'],
+            registration_no=registration_no,
+            first_name=first_name,
+            last_name=last_name,
             gender=data.get('gender'),
             date_of_birth=dob,
-            phone=data.get('phone'),
-            program_id=int(data['program_id']),
+            phone=str(data.get('phone', '')).strip() if data.get('phone') else None,
+            program_id=int(program_id),
             status='active'
         )
         db.session.add(student)
@@ -103,30 +108,32 @@ def register():
 def register_admin():
     data = request.get_json() or {}
     
-    required_fields = ['username', 'email', 'password']
-    for field in required_fields:
-        if not data.get(field):
-            return jsonify({"error": f"Missing required field: {field}"}), 400
+    username = str(data.get('username', '')).strip()
+    email = str(data.get('email', '')).strip().lower()
+    password = str(data.get('password', '')).strip()
+    
+    if not username or not email or not password:
+        return jsonify({"error": "Missing required administrator registration fields"}), 400
 
     # Verify admin registration key (optional security feature, defaults to ADMIN2026 or admin123)
-    admin_key = data.get('admin_key', '').strip()
-    valid_keys = ['ADMIN2026', 'admin123', 'admin', 'SECRET_ADMIN_KEY']
+    admin_key = str(data.get('admin_key', '')).strip()
+    valid_keys = ['', 'ADMIN2026', 'admin123', 'admin', 'SECRET_ADMIN_KEY']
     if admin_key and admin_key not in valid_keys:
         return jsonify({"error": "Invalid administrator authorization key"}), 403
         
-    if User.query.filter_by(username=data['username']).first():
+    if User.query.filter_by(username=username).first():
         return jsonify({"error": "Username already exists"}), 400
         
-    if User.query.filter_by(email=data['email']).first():
+    if User.query.filter_by(email=email).first():
         return jsonify({"error": "Email already exists"}), 400
 
     try:
         user = User(
-            username=data['username'],
-            email=data['email'],
+            username=username,
+            email=email,
             role='admin'
         )
-        user.set_password(data['password'])
+        user.set_password(password)
         db.session.add(user)
         db.session.commit()
         
@@ -140,14 +147,14 @@ def register_admin():
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.get_json() or {}
-    username = data.get('username')
-    password = data.get('password')
+    username = str(data.get('username', '')).strip()
+    password = str(data.get('password', '')).strip()
     
     if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
         
     # Check by username or email
-    user = User.query.filter((User.username == username) | (User.email == username)).first()
+    user = User.query.filter((User.username == username) | (User.email == username.lower())).first()
     
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid credentials"}), 401
