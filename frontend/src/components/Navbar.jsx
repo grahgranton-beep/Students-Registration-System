@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { GraduationCap, Bell, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE } from '../config';
 
 const Navbar = () => {
   const { user, token, logout } = useAuth();
@@ -10,7 +11,7 @@ const Navbar = () => {
 
   useEffect(() => {
     if (!token || !user || user.role !== 'admin') return;
-    fetch('http://localhost:5000/api/dashboard/stats', {
+    fetch(`${API_BASE}/dashboard/stats`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())

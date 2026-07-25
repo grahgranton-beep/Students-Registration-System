@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
 import { Calendar, FileText, Download, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { COURSE_MATERIALS } from '../../data/courseMaterials';
+import { API_BASE } from '../../config';
 
 const RegisteredUnits = () => {
   const { student, token } = useAuth();
@@ -23,14 +24,14 @@ const RegisteredUnits = () => {
     try {
       setLoading(true);
       // Fetch session
-      const sessionRes = await fetch('http://localhost:5000/api/sessions');
+      const sessionRes = await fetch(`${API_BASE}/sessions`);
       const sessionsData = await sessionRes.json();
       const active = sessionsData.find(s => s.is_active);
       setActiveSession(active);
 
       if (active) {
         // Fetch current session registrations
-        const regsRes = await fetch(`http://localhost:5000/api/registrations?session_id=${active.id}`, {
+        const regsRes = await fetch(`${API_BASE}/registrations?session_id=${active.id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const regsData = await regsRes.json();
@@ -53,7 +54,7 @@ const RegisteredUnits = () => {
     if (!student) return;
     
     // Download the PDF from the backend endpoint
-    const url = `http://localhost:5000/api/reports/registration-slip/${student.id}`;
+    const url = `${API_BASE}/reports/registration-slip/${student.id}`;
     
     setToastMessage("Generating PDF Registration Slip...");
     setToastType("info");
@@ -91,7 +92,7 @@ const RegisteredUnits = () => {
     if (!window.confirm("Are you sure you want to drop this unit registration?")) return;
     
     try {
-      const res = await fetch(`http://localhost:5000/api/registrations/${regId}`, {
+      const res = await fetch(`${API_BASE}/registrations/${regId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

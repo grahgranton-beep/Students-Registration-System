@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
+import { API_BASE } from '../../config';
 import { Users, Clock, CheckCircle2, AlertTriangle, ShieldCheck, Mail, Check, X, ShieldAlert, RotateCcw, Filter } from 'lucide-react';
 
 // ── Inline Bar Chart ──────────────────────────────────────────────────────
@@ -53,13 +54,13 @@ const AdminDashboard = () => {
     try {
       setLoading(true);
       const [dashRes, stuRes, regsRes] = await Promise.all([
-        fetch('http://localhost:5000/api/dashboard/stats', {
+        fetch(`${API_BASE}/dashboard/stats`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(r => r.json()),
-        fetch('http://localhost:5000/api/students', {
+        fetch(`${API_BASE}/students`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(r => r.json()),
-        fetch('http://localhost:5000/api/registrations', {
+        fetch(`${API_BASE}/registrations`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(r => r.json()),
       ]);
@@ -85,7 +86,7 @@ const AdminDashboard = () => {
 
   const handleUpdateStatus = async (regId, newStatus) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/registrations/${regId}/status`, {
+      const res = await fetch(`${API_BASE}/registrations/${regId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +111,7 @@ const AdminDashboard = () => {
     if (pendingList.length === 0) return;
     try {
       const ids = pendingList.map(r => r.id);
-      const res = await fetch('http://localhost:5000/api/registrations/bulk-status', {
+      const res = await fetch(`${API_BASE}/registrations/bulk-status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +134,7 @@ const AdminDashboard = () => {
     if (allRegs.length === 0) return;
     try {
       const ids = allRegs.map(r => r.id);
-      const res = await fetch('http://localhost:5000/api/registrations/bulk-status', {
+      const res = await fetch(`${API_BASE}/registrations/bulk-status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

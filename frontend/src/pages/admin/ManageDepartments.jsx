@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
 import { Building2, Calendar, Plus, Edit2, Trash2, ShieldCheck } from 'lucide-react';
+import { API_BASE } from '../../config';
 
 const ManageDepartments = () => {
   const { token } = useAuth();
@@ -28,14 +29,14 @@ const ManageDepartments = () => {
     try {
       setLoading(true);
       // Depts
-      const deptRes = await fetch('http://localhost:5000/api/departments', {
+      const deptRes = await fetch(`${API_BASE}/departments`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const deptData = await deptRes.json();
       setDepartments(deptData);
 
       // Sessions
-      const sessRes = await fetch('http://localhost:5000/api/sessions', {
+      const sessRes = await fetch(`${API_BASE}/sessions`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const sessData = await sessRes.json();
@@ -78,8 +79,8 @@ const ManageDepartments = () => {
     e.preventDefault();
     try {
       const url = deptModalMode === 'create' 
-        ? 'http://localhost:5000/api/departments'
-        : `http://localhost:5000/api/departments/${selectedDeptId}`;
+        ? `${API_BASE}/departments`
+        : `${API_BASE}/departments/${selectedDeptId}`;
       const method = deptModalMode === 'create' ? 'POST' : 'PUT';
 
       const res = await fetch(url, {
@@ -107,7 +108,7 @@ const ManageDepartments = () => {
   const handleDeleteDept = async (deptId) => {
     if (!window.confirm("Delete this department? This will delete all linked programs and units!")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/departments/${deptId}`, {
+      const res = await fetch(`${API_BASE}/departments/${deptId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -129,7 +130,7 @@ const ManageDepartments = () => {
   const handleSessSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5000/api/sessions', {
+      const res = await fetch(`${API_BASE}/sessions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -154,7 +155,7 @@ const ManageDepartments = () => {
 
   const handleActivateSession = async (sessId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/sessions/${sessId}/activate`, {
+      const res = await fetch(`${API_BASE}/sessions/${sessId}/activate`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -175,7 +176,7 @@ const ManageDepartments = () => {
   const handleDeleteSession = async (sessId) => {
     if (!window.confirm("Delete this academic semester?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/sessions/${sessId}`, {
+      const res = await fetch(`${API_BASE}/sessions/${sessId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

@@ -81,10 +81,10 @@ const UnitRegistration = () => {
     if (!token || !student) return;
     setLoading(true);
     Promise.all([
-      fetch(`http://localhost:5000/api/units?program_id=${student.program_id}`, {
+      fetch(`${API_BASE}/units?program_id=${student.program_id}`, {
         headers: { Authorization: `Bearer ${token}` },
       }).then(r => r.json()),
-      fetch('http://localhost:5000/api/registrations', {
+      fetch(`${API_BASE}/registrations`, {
         headers: { Authorization: `Bearer ${token}` },
       }).then(r => r.json()),
     ])
@@ -147,7 +147,7 @@ const UnitRegistration = () => {
     setSubmitting(true);
     try {
       // Backend expects { unit_ids: [...] } as an array in a single POST
-      const res = await fetch('http://localhost:5000/api/registrations', {
+      const res = await fetch(`${API_BASE}/registrations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ unit_ids: selectedUnitIds }),
@@ -168,7 +168,7 @@ const UnitRegistration = () => {
       setStep(0);
 
       // Refresh registered units list
-      const regsRes = await fetch('http://localhost:5000/api/registrations', {
+      const regsRes = await fetch(`${API_BASE}/registrations`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRegisteredUnits(await regsRes.json());

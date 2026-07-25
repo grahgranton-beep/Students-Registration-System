@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
 import { BookOpen, FolderOpen, Plus, Edit2, Trash2 } from 'lucide-react';
+import { API_BASE } from '../../config';
 
 const ManageCourses = () => {
   const { token } = useAuth();
@@ -33,21 +34,21 @@ const ManageCourses = () => {
     try {
       setLoading(true);
       // Programs
-      const progRes = await fetch('http://localhost:5000/api/programs', {
+      const progRes = await fetch(`${API_BASE}/programs`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const progData = await progRes.json();
       setPrograms(progData);
 
       // Units
-      const unitsRes = await fetch('http://localhost:5000/api/units', {
+      const unitsRes = await fetch(`${API_BASE}/units`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const unitsData = await unitsRes.json();
       setUnits(unitsData);
 
       // Departments
-      const deptRes = await fetch('http://localhost:5000/api/departments', {
+      const deptRes = await fetch(`${API_BASE}/departments`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const deptData = await deptRes.json();
@@ -90,8 +91,8 @@ const ManageCourses = () => {
     e.preventDefault();
     try {
       const url = progModalMode === 'create' 
-        ? 'http://localhost:5000/api/programs'
-        : `http://localhost:5000/api/programs/${selectedProgId}`;
+        ? `${API_BASE}/programs`
+        : `${API_BASE}/programs/${selectedProgId}`;
       const method = progModalMode === 'create' ? 'POST' : 'PUT';
 
       const res = await fetch(url, {
@@ -119,7 +120,7 @@ const ManageCourses = () => {
   const handleDeleteProg = async (progId) => {
     if (!window.confirm("Delete this program? This will delete all associated student courses!")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/programs/${progId}`, {
+      const res = await fetch(`${API_BASE}/programs/${progId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -180,8 +181,8 @@ const ManageCourses = () => {
     e.preventDefault();
     try {
       const url = unitModalMode === 'create' 
-        ? 'http://localhost:5000/api/units'
-        : `http://localhost:5000/api/units/${selectedUnitId}`;
+        ? `${API_BASE}/units`
+        : `${API_BASE}/units/${selectedUnitId}`;
       const method = unitModalMode === 'create' ? 'POST' : 'PUT';
 
       const res = await fetch(url, {
@@ -209,7 +210,7 @@ const ManageCourses = () => {
   const handleDeleteUnit = async (unitId) => {
     if (!window.confirm("Are you sure you want to delete this academic unit?")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/units/${unitId}`, {
+      const res = await fetch(`${API_BASE}/units/${unitId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

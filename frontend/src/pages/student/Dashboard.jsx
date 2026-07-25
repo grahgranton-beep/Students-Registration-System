@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
+import { API_BASE } from '../../config';
 import {
   GraduationCap, Calendar, Bell, AlertCircle, CheckCircle2,
   AlertTriangle, Plus, ChevronRight, Clock, BookOpen, Download, User, X, FileText
@@ -31,8 +32,8 @@ const StudentDashboard = () => {
   useEffect(() => {
     if (!token) return;
     Promise.all([
-      fetch('http://localhost:5000/api/sessions', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
-      fetch('http://localhost:5000/api/registrations', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+      fetch(`${API_BASE}/sessions`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+      fetch(`${API_BASE}/registrations`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
     ])
       .then(([sess, regs]) => {
         setSessions(Array.isArray(sess) ? sess : []);
@@ -44,7 +45,7 @@ const StudentDashboard = () => {
 
   const handleDownloadSlip = () => {
     if (!student) return;
-    const url = `http://localhost:5000/api/reports/registration-slip/${student.id}`;
+    const url = `${API_BASE}/reports/registration-slip/${student.id}`;
     showToast("Generating PDF Registration Slip...", "info");
 
     fetch(url, {

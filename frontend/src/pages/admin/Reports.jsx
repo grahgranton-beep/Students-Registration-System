@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
 import { FileText, FileSpreadsheet, Download } from 'lucide-react';
+import { API_BASE } from '../../config';
 
 const Reports = () => {
   const { token } = useAuth();
@@ -18,7 +19,7 @@ const Reports = () => {
     if (!token) return;
     
     // Fetch units for selector
-    fetch('http://localhost:5000/api/units', {
+    fetch(`${API_BASE}/units`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -43,7 +44,7 @@ const Reports = () => {
     setToastMessage("Generating requested export report...");
     setToastType("info");
 
-    fetch(`http://localhost:5000/api/reports/${endpoint}`, {
+    fetch(`${API_BASE}/reports/${endpoint}`, {
       headers: {
         'Authorization': `Bearer ${token}`
       }

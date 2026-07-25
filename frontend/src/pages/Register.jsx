@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GraduationCap, User, Mail, Lock, Phone, UserCheck, Hash, ShieldCheck, KeyRound } from 'lucide-react';
 
+import { API_BASE } from '../config';
+
 const Register = () => {
   const { registerStudent, registerAdmin, user } = useAuth();
   const navigate = useNavigate();
@@ -46,7 +48,7 @@ const Register = () => {
 
   // Fetch programs list on mount
   useEffect(() => {
-    fetch('http://localhost:5000/api/programs')
+    fetch(`${API_BASE}/programs`)
       .then(res => res.json())
       .then(data => {
         setPrograms(data);

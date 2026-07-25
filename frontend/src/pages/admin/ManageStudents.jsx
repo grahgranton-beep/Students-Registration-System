@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import Toast from '../../components/Toast';
 import { Users, Check, X, Search, Plus, Edit2, Trash2, ShieldAlert } from 'lucide-react';
+import { API_BASE } from '../../config';
 
 const ManageStudents = () => {
   const { token } = useAuth();
@@ -43,21 +44,21 @@ const ManageStudents = () => {
     try {
       setLoading(true);
       // Fetch students
-      const studentsRes = await fetch('http://localhost:5000/api/students', {
+      const studentsRes = await fetch(`${API_BASE}/students`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const studentsData = await studentsRes.json();
       setStudents(studentsData);
 
       // Fetch pending registrations
-      const regsRes = await fetch('http://localhost:5000/api/registrations', {
+      const regsRes = await fetch(`${API_BASE}/registrations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const regsData = await regsRes.json();
       setPendingRegs(regsData.filter(r => r.status === 'pending'));
 
       // Fetch programs list
-      const programsRes = await fetch('http://localhost:5000/api/programs', {
+      const programsRes = await fetch(`${API_BASE}/programs`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const programsData = await programsRes.json();
@@ -84,7 +85,7 @@ const ManageStudents = () => {
   // Approval queue actions
   const handleApprovalStatus = async (regId, status) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/registrations/${regId}/status`, {
+      const res = await fetch(`${API_BASE}/registrations/${regId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +109,7 @@ const ManageStudents = () => {
   const handleDeleteStudent = async (studentId) => {
     if (!window.confirm("Are you sure you want to permanently delete this student account? This cannot be undone.")) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/students/${studentId}`, {
+      const res = await fetch(`${API_BASE}/students/${studentId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -165,8 +166,8 @@ const ManageStudents = () => {
     e.preventDefault();
     try {
       const url = modalMode === 'create' 
-        ? 'http://localhost:5000/api/students'
-        : `http://localhost:5000/api/students/${selectedStudentId}`;
+        ? `${API_BASE}/students`
+        : `${API_BASE}/students/${selectedStudentId}`;
         
       const method = modalMode === 'create' ? 'POST' : 'PUT';
       
