@@ -6,7 +6,6 @@ import { GraduationCap, User, Mail, Lock, Phone, UserCheck, Hash, ShieldCheck, K
 import { API_BASE } from '../config';
 
 const Register = () => {
-  const { registerStudent, registerAdmin, user } = useAuth();
   const navigate = useNavigate();
 
   // Role toggle: 'student' or 'admin'
@@ -37,27 +36,32 @@ const Register = () => {
   const [programs, setPrograms] = useState([]);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { registerStudent, registerAdmin, user, loading: authLoading } = useAuth();
 
   // If already logged in, redirect
   useEffect(() => {
-    if (user) {
-      navigate(user.role === 'admin' ? '/admin/dashboard' : '/student/dashboard');
+    if (!authLoading && user) {
+      navigate(user.role === 'admin' ? '/admin/dashboard' : '/student/dashboard', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   // Fetch programs list on mount
   useEffect(() => {
     fetch(`${API_BASE}/programs`)
       .then(res => res.json())
       .then(data => {
-        setPrograms(data);
-        if (data.length > 0) {
-          setFormData(prev => ({ ...prev, program_id: data[0].id.toString() }));
+        if (Array.isArray(data)) {
+          setPrograms(data);
+          if (data.length > 0) {
+            setFormData(prev => ({ ...prev, program_id: data[0].id.toString() }));
+          }
+        } else {
+          setPrograms([]);
         }
       })
       .catch(err => {
         console.error("Error loading programs", err);
+        setPrograms([]);
       });
   }, []);
 
@@ -473,7 +477,7 @@ const Register = () => {
                   onChange={handleChange}
                   required
                 >
-                  {programs.map(p => (
+                  {(Array.isArray(programs) ? programs : []).map(p => (
                     <option key={p.id} value={p.id}>{p.code} - {p.name}</option>
                   ))}
                 </select>

@@ -32,7 +32,7 @@ const Login = () => {
     setLoading(true);
     const result = await login(identifier.trim(), password, role);
     if (!result.success) {
-      setError(result.message || 'Invalid credentials. Please try again.');
+      setError(result.error || result.message || 'Invalid credentials. Please try again.');
     }
     setLoading(false);
   };
