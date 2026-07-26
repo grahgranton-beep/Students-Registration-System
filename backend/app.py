@@ -32,24 +32,28 @@ def create_app(config_class=Config):
         app.config['SQLALCHEMY_DATABASE_URI'] = db_url
         print(f"Connected to external database (Supabase / Postgres)")
     elif not app.config.get('TESTING'):
-        try:
-            # Connect to MySQL server to check availability and create database
-            conn = pymysql.connect(
-                host=app.config['MYSQL_HOST'],
-                user=app.config['MYSQL_USER'],
-                password=app.config['MYSQL_PASSWORD'],
-                port=int(app.config['MYSQL_PORT']),
-                connect_timeout=3
-            )
-            cursor = conn.cursor()
-            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {app.config['MYSQL_DB']}")
-            conn.close()
-            app.config['SQLALCHEMY_DATABASE_URI'] = app.config['MYSQL_URI']
-            print(f"Successfully connected to MySQL database: {app.config['MYSQL_DB']}")
-        except Exception as e:
-            print(f"WARNING: MySQL database connection failed: {e}")
-            print(f"Falling back to local SQLite database: {app.config['SQLITE_URI']}")
+        if os.environ.get('VERCEL') == '1':
+            print(f"Running on Vercel. Falling back to SQLite database: {app.config['SQLITE_URI']}")
             app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLITE_URI']
+        else:
+            try:
+                # Connect to MySQL server to check availability and create database
+                conn = pymysql.connect(
+                    host=app.config['MYSQL_HOST'],
+                    user=app.config['MYSQL_USER'],
+                    password=app.config['MYSQL_PASSWORD'],
+                    port=int(app.config['MYSQL_PORT']),
+                    connect_timeout=3
+                )
+                cursor = conn.cursor()
+                cursor.execute(f"CREATE DATABASE IF NOT EXISTS {app.config['MYSQL_DB']}")
+                conn.close()
+                app.config['SQLALCHEMY_DATABASE_URI'] = app.config['MYSQL_URI']
+                print(f"Successfully connected to MySQL database: {app.config['MYSQL_DB']}")
+            except Exception as e:
+                print(f"WARNING: MySQL database connection failed: {e}")
+                print(f"Falling back to local SQLite database: {app.config['SQLITE_URI']}")
+                app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLITE_URI']
             
     # Initialize DB
     db.init_app(app)

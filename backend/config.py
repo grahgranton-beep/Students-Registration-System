@@ -23,8 +23,11 @@ class Config:
     
     # Assemble MySQL URI
     MYSQL_URI = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
-    # SQLite Fallback URI
-    SQLITE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'students_registration.db')}"
+    # SQLite Fallback URI - use /tmp on Vercel since filesystem is read-only
+    if os.environ.get('VERCEL') == '1':
+        SQLITE_URI = "sqlite:////tmp/students_registration.db"
+    else:
+        SQLITE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'students_registration.db')}"
     
     # Choose Database URI. Will default to MySQL, but app.py will check if MySQL is available at start.
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', MYSQL_URI)
