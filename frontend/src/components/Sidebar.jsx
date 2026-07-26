@@ -137,17 +137,17 @@ const Sidebar = ({ isOpen, onClose }) => {
           justifyContent: 'center',
           gap: '0.5rem',
           padding: '0.75rem',
-          border: '1px solid var(--border-light)',
-          background: 'rgba(239, 68, 68, 0.05)',
-          color: 'var(--color-error)'
+          border: '1px solid var(--border)',
+          background: 'var(--bg-tertiary)',
+          color: 'var(--text-secondary)'
         }}
         onMouseEnter={(e) => {
-          e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
-          e.target.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+          e.target.style.backgroundColor = 'var(--border)';
+          e.target.style.borderColor = 'var(--text-secondary)';
         }}
         onMouseLeave={(e) => {
-          e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
-          e.target.style.borderColor = 'var(--border-light)';
+          e.target.style.backgroundColor = 'var(--bg-tertiary)';
+          e.target.style.borderColor = 'var(--border)';
         }}
       >
         <LogOut size={18} />

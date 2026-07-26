@@ -78,10 +78,10 @@ const StudentDashboard = () => {
   const registrationStatus = pendingCount > 0 ? 'pending' : approvedCount > 0 ? 'active' : 'not-started';
 
   const deadlines = [
-    { month: 'AUG', day: '15', title: 'Course Add/Drop Period Ends', desc: '11:59 PM Eastern Time', color: '#ef4444' },
-    { month: 'SEP', day: '02', title: 'Tuition Payment Due', desc: 'Final Installment', color: '#f97316' },
+    { month: 'AUG', day: '15', title: 'Course Add/Drop Period Ends', desc: '11:59 PM Eastern Time', color: '#334155' },
+    { month: 'SEP', day: '02', title: 'Tuition Payment Due', desc: 'Final Installment', color: '#475569' },
     { month: 'OCT', day: '10', title: 'Mid-Term Exams Start', desc: 'Full Campus Schedule', color: '#6366f1' },
-    { month: 'NOV', day: '25', title: 'End of Semester Examinations', desc: 'Academic Main Hall', color: '#10b981' }
+    { month: 'NOV', day: '25', title: 'End of Semester Examinations', desc: 'Academic Main Hall', color: '#6366f1' }
   ];
 
   const notifications = [
@@ -140,7 +140,7 @@ const StudentDashboard = () => {
             display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
             background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', borderRadius: 20,
             padding: '0.3rem 0.75rem', fontSize: '0.8rem', fontWeight: 600,
-            border: '1px solid #fde68a',
+            border: '1px solid var(--border)',
           }}>
             <Clock size={13} />
             Registration Status: Pending Approval

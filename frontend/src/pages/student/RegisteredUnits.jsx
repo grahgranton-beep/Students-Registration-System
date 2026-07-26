@@ -444,12 +444,12 @@ Please check back soon for the full lecture slides and textbook materials!`
                             style={{
                               padding: '0.25rem 0.625rem',
                               fontSize: '0.75rem',
-                              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                              color: 'var(--color-error)',
-                              border: '1px solid rgba(239, 68, 68, 0.2)'
+                              backgroundColor: 'var(--bg-tertiary)',
+                              color: 'var(--text-secondary)',
+                              border: '1px solid var(--border)'
                             }}
-                            onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--color-error-bg)'}
-                            onMouseLeave={(e) => e.target.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
+                            onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--border)'}
+                            onMouseLeave={(e) => e.target.style.backgroundColor = 'var(--bg-tertiary)'}
                           >
                             Drop
                           </button>

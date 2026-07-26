@@ -250,11 +250,11 @@ const Login = () => {
                 style={{
                   padding: '0.75rem',
                   borderRadius: 8,
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  color: '#ef4444',
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-secondary)',
                   fontSize: '0.85rem',
                   marginBottom: '1rem',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  border: '1px solid var(--border)',
                 }}
               >
                 {error}

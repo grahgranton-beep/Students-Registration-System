@@ -213,7 +213,7 @@ const Register = () => {
             padding: '0.75rem 1rem',
             backgroundColor: 'var(--color-error-bg)',
             color: 'var(--color-error)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
+            border: '1px solid var(--border)',
             fontSize: '0.85rem',
             marginBottom: '1.25rem',
             fontWeight: 500

@@ -266,9 +266,9 @@ const ManageStudents = () => {
                           className="btn"
                           style={{
                             padding: '0.25rem 0.5rem',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            color: 'var(--color-error)',
-                            border: '1px solid rgba(239, 68, 68, 0.2)'
+                            backgroundColor: 'var(--bg-tertiary)',
+                            color: 'var(--text-secondary)',
+                            border: '1px solid var(--border)'
                           }}
                         >
                           <X size={14} /> Reject

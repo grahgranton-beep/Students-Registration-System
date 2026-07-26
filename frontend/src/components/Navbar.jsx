@@ -91,8 +91,8 @@ const Navbar = () => {
                   width: 8,
                   height: 8,
                   borderRadius: '50%',
-                  background: '#ef4444',
-                  border: '1.5px solid white',
+                  background: 'var(--brand-primary)',
+                  border: '1.5px solid var(--bg-secondary)',
                 }}
               />
             )}
@@ -136,15 +136,15 @@ const Navbar = () => {
           onClick={handleLogout}
           title="Sign Out"
           style={{
-            background: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
+            background: 'var(--bg-tertiary)',
+            border: '1px solid var(--border)',
             cursor: 'pointer',
             padding: '0.35rem 0.65rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.35rem',
             borderRadius: 8,
-            color: '#ef4444',
+            color: 'var(--text-secondary)',
             fontSize: '0.78rem',
             fontWeight: 700,
             transition: 'opacity 0.15s',
@@ -155,6 +155,7 @@ const Navbar = () => {
           <LogOut size={15} />
           <span>Logout</span>
         </button>
+
       </div>
     </header>
   );
