@@ -14,24 +14,18 @@ class Config:
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'jwt-super-secret-key-67890-secure-32-byte-length-key')
     JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(hours=4)
     
-    # Database Settings - default to MySQL under XAMPP, fallback to SQLite
-    MYSQL_USER = os.environ.get('DB_USER', 'root')
-    MYSQL_PASSWORD = os.environ.get('DB_PASSWORD', '')
-    MYSQL_HOST = os.environ.get('DB_HOST', 'localhost')
-    MYSQL_PORT = os.environ.get('DB_PORT', '3306')
-    MYSQL_DB = os.environ.get('DB_NAME', 'students_registration')
+    # Database - use DATABASE_URL from environment (Neon/Supabase/Heroku PostgreSQL)
+    # Falls back to local SQLite for development
+    _db_url = os.environ.get('DATABASE_URL', '')
+    if _db_url.startswith('postgres://'):
+        _db_url = _db_url.replace('postgres://', 'postgresql://', 1)
     
-    # Assemble MySQL URI
-    MYSQL_URI = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
-    # SQLite Fallback URI - use /tmp on Vercel since filesystem is read-only
-    if os.environ.get('VERCEL') == '1':
-        SQLITE_URI = "sqlite:////tmp/students_registration.db"
-    else:
-        SQLITE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'students_registration.db')}"
-    
-    # Choose Database URI. Will default to MySQL, but app.py will check if MySQL is available at start.
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', MYSQL_URI)
+    SQLALCHEMY_DATABASE_URI = _db_url if _db_url else f"sqlite:///{os.path.join(BASE_DIR, 'students_registration.db')}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+    }
     
     # Testing mode
     TESTING = False

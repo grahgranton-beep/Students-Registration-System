@@ -4,3 +4,8 @@ __pycache__/
 .venv/
 backend/venv/
 *.db
+*.zip
+.env
+node_modules/
+frontend/dist/
+frontend/node_modules/

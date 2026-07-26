@@ -1,9 +1,4 @@
 import os
-try:
-    import pymysql
-    pymysql.install_as_MySQLdb()
-except ImportError:
-    pass
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
@@ -18,43 +13,12 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Configure CORS - allow React dev server
+    # Configure CORS - allow all origins
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     
     # Configure JWT
-    jwt = JWTManager(app)
+    JWTManager(app)
     
-    # Check if DATABASE_URL or SUPABASE_DB_URL is provided in environment
-    db_url = os.environ.get('DATABASE_URL') or os.environ.get('SUPABASE_DB_URL')
-    if db_url:
-        if db_url.startswith('postgres://'):
-            db_url = db_url.replace('postgres://', 'postgresql://', 1)
-        app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-        print(f"Connected to external database (Supabase / Postgres)")
-    elif not app.config.get('TESTING'):
-        if os.environ.get('VERCEL') == '1':
-            print(f"Running on Vercel. Falling back to SQLite database: {app.config['SQLITE_URI']}")
-            app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLITE_URI']
-        else:
-            try:
-                # Connect to MySQL server to check availability and create database
-                conn = pymysql.connect(
-                    host=app.config['MYSQL_HOST'],
-                    user=app.config['MYSQL_USER'],
-                    password=app.config['MYSQL_PASSWORD'],
-                    port=int(app.config['MYSQL_PORT']),
-                    connect_timeout=3
-                )
-                cursor = conn.cursor()
-                cursor.execute(f"CREATE DATABASE IF NOT EXISTS {app.config['MYSQL_DB']}")
-                conn.close()
-                app.config['SQLALCHEMY_DATABASE_URI'] = app.config['MYSQL_URI']
-                print(f"Successfully connected to MySQL database: {app.config['MYSQL_DB']}")
-            except Exception as e:
-                print(f"WARNING: MySQL database connection failed: {e}")
-                print(f"Falling back to local SQLite database: {app.config['SQLITE_URI']}")
-                app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLITE_URI']
-            
     # Initialize DB
     db.init_app(app)
     
@@ -88,12 +52,13 @@ def create_app(config_class=Config):
     with app.app_context():
         try:
             db.create_all()
+            print("Database tables created/verified.")
         except Exception as e:
-            print(f"Notice: db.create_all skipped/warning: {e}")
+            print(f"Notice: db.create_all error: {e}")
         try:
             seed_database()
         except Exception as e:
-            print(f"Notice: seed_database skipped/warning: {e}")
+            print(f"Notice: seed_database error: {e}")
         
     return app
 
@@ -113,180 +78,114 @@ def seed_database():
     if not next_session:
         next_session = AcademicSession(name="2025/2026 Semester 2", is_active=False)
         db.session.add(next_session)
-    db.session.commit() # Commit to get IDs
-    
-    # 2. Create Departments
+    db.session.commit()
+    # Re-fetch after commit to get IDs
+    past_session = AcademicSession.query.filter_by(name="2024/2025 Semester 2").first()
+    active_session = AcademicSession.query.filter_by(name="2025/2026 Semester 1").first()
+
+    # 2. Create Department
     cs_dept = Department.query.filter_by(code="CS").first()
     if not cs_dept:
-        cs_dept = Department(code="CS", name="Computer Science & IT")
+        cs_dept = Department(code="CS", name="Computer Science")
         db.session.add(cs_dept)
-    eng_dept = Department.query.filter_by(code="ENG").first()
-    if not eng_dept:
-        eng_dept = Department(code="ENG", name="Engineering & Technology")
-        db.session.add(eng_dept)
+    it_dept = Department.query.filter_by(code="IT").first()
+    if not it_dept:
+        it_dept = Department(code="IT", name="Information Technology")
+        db.session.add(it_dept)
     db.session.commit()
-    
+    cs_dept = Department.query.filter_by(code="CS").first()
+    it_dept = Department.query.filter_by(code="IT").first()
+
     # 3. Create Programs
-    programs_data = [
-        ("BSE", "B.Sc. Software Engineering", cs_dept.id),
-        ("BIT", "B.Sc. Information Technology", cs_dept.id),
-        ("BEE", "B.Sc. Electrical Engineering", eng_dept.id),
-        ("BCS", "B.Sc. Computer Science", cs_dept.id),
-        ("BGD", "B.Sc. Graphics Design", cs_dept.id),
-        ("BSECT", "B.Sc. Computer Technology", cs_dept.id),
-        ("BDS", "B.Sc. Data Science", cs_dept.id),
-        ("BCY", "B.Sc. Cyber Security", cs_dept.id),
-    ]
-    programs = {}
-    for code, name, dept_id in programs_data:
-        prog = Program.query.filter_by(code=code).first()
-        if not prog:
-            prog = Program(code=code, name=name, department_id=dept_id)
-            db.session.add(prog)
-            print(f"Seeded program: {code} - {name}")
-        programs[code] = prog
+    bse_prog = Program.query.filter_by(code="BSE").first()
+    if not bse_prog:
+        bse_prog = Program(code="BSE", name="Bachelor of Software Engineering", department_id=cs_dept.id)
+        db.session.add(bse_prog)
+    bcs_prog = Program.query.filter_by(code="BCS").first()
+    if not bcs_prog:
+        bcs_prog = Program(code="BCS", name="Bachelor of Computer Science", department_id=cs_dept.id)
+        db.session.add(bcs_prog)
+    bit_prog = Program.query.filter_by(code="BIT").first()
+    if not bit_prog:
+        bit_prog = Program(code="BIT", name="Bachelor of Information Technology", department_id=it_dept.id)
+        db.session.add(bit_prog)
     db.session.commit()
-    
-    # Get references to programs
-    bse_prog = programs["BSE"]
-    bit_prog = programs["BIT"]
-    bcs_prog = programs["BCS"]
-    bgd_prog = programs["BGD"]
-    
-    # 4. Create Units (Subjects)
-    # BSE units
+    bse_prog = Program.query.filter_by(code="BSE").first()
+    bcs_prog = Program.query.filter_by(code="BCS").first()
+    bit_prog = Program.query.filter_by(code="BIT").first()
+
+    # 4. Create Units
     cs101 = Unit.query.filter_by(code="CS101").first()
     if not cs101:
-        cs101 = Unit(code="CS101", name="Introduction to Programming", credits=3, program_id=bse_prog.id, description="Introduction to basic programming concepts, control flows, data types, and syntax using Python.")
+        cs101 = Unit(code="CS101", name="Introduction to Computer Science", credits=3, program_id=bse_prog.id,
+                     description="Fundamentals of Computer Science and programming basics.")
         db.session.add(cs101)
-    se102 = Unit.query.filter_by(code="SE102").first()
-    if not se102:
-        se102 = Unit(code="SE102", name="Discrete Mathematics for SE", credits=3, program_id=bse_prog.id, description="Mathematical foundations including logic, set theory, graph theory, and proof techniques.")
-        db.session.add(se102)
-    se103 = Unit.query.filter_by(code="SE103").first()
-    if not se103:
-        se103 = Unit(code="SE103", name="Professional Ethics & Tech Law", credits=3, program_id=bse_prog.id, description="Ethical considerations, data privacy, intellectual property, and compliance in tech.")
-        db.session.add(se103)
+    db.session.commit()
+    cs101 = Unit.query.filter_by(code="CS101").first()
+
+    math101 = Unit.query.filter_by(code="MATH101").first()
+    if not math101:
+        math101 = Unit(code="MATH101", name="Discrete Mathematics", credits=3, program_id=bse_prog.id,
+                       description="Logic, sets, functions, combinatorics and graph theory.")
+        db.session.add(math101)
+    db.session.commit()
+
     se201 = Unit.query.filter_by(code="SE201").first()
     if not se201:
-        se201 = Unit(code="SE201", name="Software Design & Patterns", credits=4, program_id=bse_prog.id, description="Covers software development life cycle, OOP principles, and design patterns like MVC, Singleton, and Factory.")
+        se201 = Unit(code="SE201", name="Software Engineering Principles", credits=3, program_id=bse_prog.id,
+                     description="Requirements engineering, design patterns, SDLC models.")
         db.session.add(se201)
-    se311 = Unit.query.filter_by(code="SE311").first()
-    if not se311:
-        se311 = Unit(code="SE311", name="Web Application Development", credits=3, program_id=bse_prog.id, description="Hands-on web technologies including HTML, CSS, JavaScript, React, and Flask API integrations.")
-        db.session.add(se311)
+    db.session.commit()
+    se201 = Unit.query.filter_by(code="SE201").first()
+    if se201 and cs101 and cs101 not in se201.prerequisites:
+        se201.prerequisites.append(cs101)
+    db.session.commit()
+
     se321 = Unit.query.filter_by(code="SE321").first()
     if not se321:
-        se321 = Unit(code="SE321", name="Database Systems & SQL", credits=3, program_id=bse_prog.id, description="Relational database design, normal forms, ER mapping, and writing optimized SQL queries in MySQL.")
+        se321 = Unit(code="SE321", name="Database Systems", credits=3, program_id=bse_prog.id,
+                     description="Relational database design, SQL, normalization, transactions.")
         db.session.add(se321)
-    se401 = Unit.query.filter_by(code="SE401").first()
-    if not se401:
-        se401 = Unit(code="SE401", name="Advanced Agentic Coding", credits=4, program_id=bse_prog.id, description="Advanced architectures, LLMs, autonomous software agents, system testing, and CI/CD pipelines.")
-        db.session.add(se401)
     db.session.commit()
-    
-    # Add prerequisites relationship if not already added
-    if cs101 and se201 and cs101 not in se201.prerequisites:
-        se201.prerequisites.append(cs101)
-    if se201 and se311 and se201 not in se311.prerequisites:
-        se311.prerequisites.append(se201)
-    if se311 and se401 and se311 not in se401.prerequisites:
-        se401.prerequisites.append(se311)
-    
-    # BIT units
-    it101 = Unit.query.filter_by(code="IT101").first()
-    if not it101:
-        it101 = Unit(code="IT101", name="Computer Hardware & Systems", credits=3, program_id=bit_prog.id, description="Basics of computer architecture, components, and OS installation.")
-        db.session.add(it101)
-    it201 = Unit.query.filter_by(code="IT201").first()
-    if not it201:
-        it201 = Unit(code="IT201", name="Network Architectures", credits=3, program_id=bit_prog.id, description="Introduction to TCP/IP stack, routing protocols, subnets, and local area network setups.")
-        db.session.add(it201)
-    it202 = Unit.query.filter_by(code="IT202").first()
-    if not it202:
-        it202 = Unit(code="IT202", name="System Administration", credits=3, program_id=bit_prog.id, description="Managing Linux and Windows server environments, user permissions, and services.")
-        db.session.add(it202)
-        
-    # CS units
-    cs102 = Unit.query.filter_by(code="CS102").first()
-    if not cs102:
-        cs102 = Unit(code="CS102", name="Data Structures & Algorithms", credits=3, program_id=bcs_prog.id, description="Fundamentals of data structures (arrays, trees, graphs) and algorithm analysis.")
-        db.session.add(cs102)
-    cs202 = Unit.query.filter_by(code="CS202").first()
-    if not cs202:
-        cs202 = Unit(code="CS202", name="Operating Systems", credits=3, program_id=bcs_prog.id, description="Core OS principles including processes, threads, memory management, and file systems.")
-        db.session.add(cs202)
+    se321 = Unit.query.filter_by(code="SE321").first()
+
     cs301 = Unit.query.filter_by(code="CS301").first()
     if not cs301:
-        cs301 = Unit(code="CS301", name="Artificial Intelligence & Machine Learning", credits=4, program_id=bcs_prog.id, description="Neural networks, supervised & unsupervised learning, and computer vision basics.")
+        cs301 = Unit(code="CS301", name="Data Structures & Algorithms", credits=3, program_id=bse_prog.id,
+                     description="Arrays, linked lists, trees, graphs, sorting/searching algorithms.")
         db.session.add(cs301)
-        
-    # GD units
-    gd101 = Unit.query.filter_by(code="GD101").first()
-    if not gd101:
-        gd101 = Unit(code="GD101", name="Introduction to Digital Design", credits=3, program_id=bgd_prog.id, description="Basics of digital graphics, vector tools, and color theory.")
-        db.session.add(gd101)
-    gd201 = Unit.query.filter_by(code="GD201").first()
-    if not gd201:
-        gd201 = Unit(code="GD201", name="Typography & Layout", credits=3, program_id=bgd_prog.id, description="Principles of layout design, typography choice, and hierarchy in page design.")
-        db.session.add(gd201)
-    gd202 = Unit.query.filter_by(code="GD202").first()
-    if not gd202:
-        gd202 = Unit(code="GD202", name="UI/UX Prototyping", credits=3, program_id=bgd_prog.id, description="User experience research, wireframing, and interactive prototyping in Figma.")
-        db.session.add(gd202)
-
-    # BDS (Data Science) units
-    bds_prog = Program.query.filter_by(code="BDS").first()
-    if bds_prog:
-        ds101 = Unit.query.filter_by(code="DS101").first()
-        if not ds101:
-            db.session.add(Unit(code="DS101", name="Data Analysis with Python", credits=3, program_id=bds_prog.id, description="Exploratory data analysis, Pandas, NumPy, and Data Visualization."))
-        ds201 = Unit.query.filter_by(code="DS201").first()
-        if not ds201:
-            db.session.add(Unit(code="DS201", name="Data Mining & Warehousing", credits=3, program_id=bds_prog.id, description="Data extraction, ETL pipelines, and SQL/NoSQL warehousing."))
-        ds301 = Unit.query.filter_by(code="DS301").first()
-        if not ds301:
-            db.session.add(Unit(code="DS301", name="Big Data Analytics & Spark", credits=4, program_id=bds_prog.id, description="Distributed data processing, PySpark, and Cloud Data Analytics."))
-
-    # BCY (Cyber Security) units
-    bcy_prog = Program.query.filter_by(code="BCY").first()
-    if bcy_prog:
-        cy101 = Unit.query.filter_by(code="CY101").first()
-        if not cy101:
-            db.session.add(Unit(code="CY101", name="Network Security & Firewalls", credits=3, program_id=bcy_prog.id, description="Network defense, firewall rules, IDS/IPS, and SSL/TLS security."))
-        cy201 = Unit.query.filter_by(code="CY201").first()
-        if not cy201:
-            db.session.add(Unit(code="CY201", name="Ethical Hacking & Pen Testing", credits=4, program_id=bcy_prog.id, description="Vulnerability assessment, penetration testing techniques, and threat modeling."))
-
-    # BEE (Electrical Engineering) units
-    bee_prog = Program.query.filter_by(code="BEE").first()
-    if bee_prog:
-        ee101 = Unit.query.filter_by(code="EE101").first()
-        if not ee101:
-            db.session.add(Unit(code="EE101", name="Electrical Circuit Analysis", credits=3, program_id=bee_prog.id, description="Ohm's law, Kirchhoff's laws, AC/DC analysis, and circuit design."))
-
+    web201 = Unit.query.filter_by(code="WEB201").first()
+    if not web201:
+        web201 = Unit(code="WEB201", name="Web Application Development", credits=3, program_id=bse_prog.id,
+                      description="HTML, CSS, JavaScript, React, REST APIs.")
+        db.session.add(web201)
+    net201 = Unit.query.filter_by(code="NET201").first()
+    if not net201:
+        net201 = Unit(code="NET201", name="Computer Networks", credits=3, program_id=bse_prog.id,
+                      description="TCP/IP, OSI model, network security fundamentals.")
+        db.session.add(net201)
     db.session.commit()
-    
-    # 5. Create Users (Admin and Student)
+
+    # 5. Create Admin User
     admin_user = User.query.filter_by(username="admin").first()
     if not admin_user:
         admin_user = User(username="admin", email="admin@school.edu", role="admin")
         admin_user.set_password("admin123")
         db.session.add(admin_user)
-    
+        db.session.commit()
+    admin_user = User.query.filter_by(username="admin").first()
+
+    # 6. Create Default Student User
     student_user = User.query.filter_by(username="student").first()
     if not student_user:
         student_user = User(username="student", email="student@school.edu", role="student")
         student_user.set_password("student123")
         db.session.add(student_user)
-    db.session.commit()
-    
-    # 6. Create Student Profile
-    student_profile = Student.query.filter_by(user_id=student_user.id).first()
-    if not student_profile:
+        db.session.flush()
+        bse_prog = Program.query.filter_by(code="BSE").first()
         student_profile = Student(
             user_id=student_user.id,
-            registration_no="REG/2026/0001",
+            registration_no="REG/2025/0001",
             first_name="John",
             last_name="Doe",
             gender="Male",
@@ -296,42 +195,47 @@ def seed_database():
         )
         db.session.add(student_profile)
         db.session.commit()
-    
-    # 7. Create past APPROVED registration for CS101 so John Doe meets prerequisites for SE201
-    past_reg = Registration.query.filter_by(student_id=student_profile.id, unit_id=cs101.id).first()
-    if not past_reg:
-        past_reg = Registration(
-            student_id=student_profile.id,
-            unit_id=cs101.id,
-            session_id=past_session.id,
-            status="approved" # Already completed in a past semester
-        )
-        db.session.add(past_reg)
-    
-    # Pre-register some pending units for the active session to demonstrate the dashboard
-    pending_reg1 = Registration.query.filter_by(student_id=student_profile.id, unit_id=se321.id).first()
-    if not pending_reg1:
-        pending_reg1 = Registration(
-            student_id=student_profile.id,
-            unit_id=se321.id,
-            session_id=active_session.id,
-            status="pending"
-        )
-        db.session.add(pending_reg1)
+    student_user = User.query.filter_by(username="student").first()
+    student_profile = Student.query.filter_by(registration_no="REG/2025/0001").first()
+
+    # 7. Create past APPROVED registration for CS101
+    if student_profile and cs101 and past_session:
+        past_reg = Registration.query.filter_by(student_id=student_profile.id, unit_id=cs101.id).first()
+        if not past_reg:
+            past_reg = Registration(
+                student_id=student_profile.id,
+                unit_id=cs101.id,
+                session_id=past_session.id,
+                status="approved"
+            )
+            db.session.add(past_reg)
+
+    # Pre-register some pending units for the active session
+    if student_profile and se321 and active_session:
+        pending_reg1 = Registration.query.filter_by(student_id=student_profile.id, unit_id=se321.id).first()
+        if not pending_reg1:
+            pending_reg1 = Registration(
+                student_id=student_profile.id,
+                unit_id=se321.id,
+                session_id=active_session.id,
+                status="pending"
+            )
+            db.session.add(pending_reg1)
     db.session.commit()
-    
+
     # 8. Create Audit log entry
-    log = AuditLog.query.filter_by(action="seed_database").first()
-    if not log:
-        log = AuditLog(
-            user_id=admin_user.id,
-            action="seed_database",
-            target_table="user",
-            details="System pre-seeded with mock data.",
-            ip_address="127.0.0.1"
-        )
-        db.session.add(log)
-        db.session.commit()
+    if admin_user:
+        log = AuditLog.query.filter_by(action="seed_database").first()
+        if not log:
+            log = AuditLog(
+                user_id=admin_user.id,
+                action="seed_database",
+                target_table="user",
+                details="System pre-seeded with mock data.",
+                ip_address="127.0.0.1"
+            )
+            db.session.add(log)
+            db.session.commit()
     
     print("Database seeding / checks completed.")
 
