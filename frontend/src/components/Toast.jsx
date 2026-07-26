@@ -11,8 +11,8 @@ const Toast = ({ message, type = 'info', onClose, duration = 4000 }) => {
 
   const config = {
     success: { color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', icon: <CheckCircle2 size={17} /> },
-    warning: { color: '#d97706', bg: '#fffbeb', border: '#fde68a', icon: <AlertTriangle size={17} /> },
-    error:   { color: '#dc2626', bg: '#fef2f2', border: '#fca5a5', icon: <XCircle size={17} /> },
+    warning: { color: '#94a3b8', bg: '#1e293b', border: '#334155', icon: <AlertTriangle size={17} /> },
+    error:   { color: '#94a3b8', bg: '#1e293b', border: '#334155', icon: <XCircle size={17} /> },
     info:    { color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', icon: <Info size={17} /> },
   };
   const { color, bg, border, icon } = config[type] || config.info;

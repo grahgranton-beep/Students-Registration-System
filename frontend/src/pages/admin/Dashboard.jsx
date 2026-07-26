@@ -174,7 +174,7 @@ const AdminDashboard = () => {
     const a = action.toLowerCase();
     if (a.includes('register') || a.includes('enrol')) return <CheckCircle2 size={15} color="#059669" />;
     if (a.includes('grade') || a.includes('approv')) return <ShieldCheck size={15} color="#2563eb" />;
-    if (a.includes('conflict') || a.includes('flag') || a.includes('exceed')) return <AlertTriangle size={15} color="#d97706" />;
+    if (a.includes('conflict') || a.includes('flag') || a.includes('exceed')) return <AlertTriangle size={15} color="#94a3b8" />;
     if (a.includes('transcript') || a.includes('request')) return <Mail size={15} color="#6b7280" />;
     return <Clock size={15} color="#9ca3af" />;
   };
@@ -184,7 +184,7 @@ const AdminDashboard = () => {
     const a = action.toLowerCase();
     if (a.includes('register') || a.includes('enrol') || a.includes('approv')) return '#d1fae5';
     if (a.includes('grade')) return '#dbeafe';
-    if (a.includes('conflict') || a.includes('flag') || a.includes('exceed')) return '#fef3c7';
+    if (a.includes('conflict') || a.includes('flag') || a.includes('exceed')) return 'var(--bg-tertiary)';
     if (a.includes('transcript') || a.includes('request')) return '#f3f4f6';
     return '#f3f4f6';
   };
@@ -252,19 +252,19 @@ const AdminDashboard = () => {
         </div>
 
         {/* Pending Registrations */}
-        <div className="card" style={{ padding: '1.25rem', border: pendingRegs.length > 0 ? '1.5px solid #fca5a5' : '1px solid var(--border)' }}>
+        <div className="card" style={{ padding: '1.25rem', border: pendingRegs.length > 0 ? '1.5px solid var(--border)' : '1px solid var(--border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.5rem' }}>
                 Pending Registrations
               </div>
-              <div style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1, color: pendingRegs.length > 0 ? '#dc2626' : 'inherit' }}>
+              <div style={{ fontSize: '2.25rem', fontWeight: 800, lineHeight: 1, color: 'var(--text-primary)' }}>
                 {pendingRegs.length}
               </div>
               <span style={{
                 display: 'inline-block', marginTop: '0.4rem',
-                background: pendingRegs.length > 0 ? '#fee2e2' : '#f3f4f6',
-                color: pendingRegs.length > 0 ? '#dc2626' : '#6b7280',
+                background: 'var(--bg-tertiary)',
+                color: 'var(--text-secondary)',
                 fontSize: '0.68rem', fontWeight: 700, padding: '0.15rem 0.5rem',
                 borderRadius: 999, letterSpacing: '0.04em',
               }}>
@@ -273,10 +273,10 @@ const AdminDashboard = () => {
             </div>
             <div style={{
               width: 40, height: 40, borderRadius: 10,
-              background: pendingRegs.length > 0 ? '#fee2e2' : '#f3f4f6',
+              background: 'var(--bg-tertiary)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Clock size={20} color={pendingRegs.length > 0 ? '#dc2626' : '#6b7280'} />
+              <Clock size={20} color="#6b7280" />
             </div>
           </div>
         </div>
@@ -316,7 +316,7 @@ const AdminDashboard = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
           <div>
             <h3 style={{ fontWeight: 800, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '0.4rem', margin: 0 }}>
-              <ShieldAlert size={20} color="#d97706" />
+              <ShieldAlert size={20} color="#94a3b8" />
               Student Unit Registrations Management ({allRegs.length})
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0' }}>
@@ -345,7 +345,7 @@ const AdminDashboard = () => {
                 type="button"
                 onClick={handleResetToPending}
                 style={{
-                  background: '#f59e0b', color: 'white', border: 'none',
+                  background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none',
                   borderRadius: 8, padding: '0.45rem 0.85rem',
                   fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: '0.35rem',
@@ -450,7 +450,7 @@ const AdminDashboard = () => {
                           type="button"
                           onClick={() => handleUpdateStatus(reg.id, 'rejected')}
                           style={{
-                            background: reg.status === 'rejected' ? '#dc2626' : '#ef4444',
+                            background: reg.status === 'rejected' ? 'var(--bg-tertiary)' : '#475569',
                             color: 'white',
                             border: 'none',
                             borderRadius: 6,

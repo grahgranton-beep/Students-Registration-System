@@ -293,9 +293,9 @@ const UnitRegistration = () => {
                               style={{
                                 fontSize: '0.68rem', fontWeight: 600,
                                 padding: '0.1rem 0.45rem', borderRadius: 6,
-                                background: pMet ? '#d1fae5' : '#fef3c7',
-                                color: pMet ? '#065f46' : '#92400e',
-                                border: `1px solid ${pMet ? '#6ee7b7' : '#fcd34d'}`,
+                                background: pMet ? '#d1fae5' : 'var(--bg-tertiary)',
+                                color: pMet ? '#065f46' : 'var(--text-secondary)',
+                                border: `1px solid ${pMet ? '#6ee7b7' : 'var(--border)'}`,
                                 display: 'inline-flex', alignItems: 'center', gap: '0.2rem'
                               }}
                             >

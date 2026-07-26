@@ -1,0 +1,40 @@
+# Render.com Deployment Configuration
+# Deploy this backend as a "Web Service" on Render
+# Docs: https://render.com/docs/web-services
+
+services:
+  - type: web
+    name: students-registration-api
+    runtime: python
+    region: oregon  # Change to your preferred region
+    plan: free
+
+    # Build step: install dependencies
+    buildCommand: pip install -r requirements.txt
+
+    # Start command: run Flask with gunicorn (production WSGI server)
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+
+    # Health check
+    healthCheckPath: /api/health
+
+    # Environment variables — set these in Render Dashboard
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true  # Render will auto-generate a secure value
+
+      - key: JWT_SECRET_KEY
+        generateValue: true  # Render will auto-generate a secure value
+
+      - key: DATABASE_URL
+        # Set this manually in Render Dashboard to your Neon/Supabase PostgreSQL URL
+        # e.g. postgresql://user:pass@ep-xxx.us-east-1.aws.neon.tech/dbname?sslmode=require
+        value: ""
+
+      - key: FRONTEND_URL
+        # Set this to your Vercel deployment URL after deploying frontend
+        # e.g. https://your-app.vercel.app
+        value: ""
+
+      - key: PYTHON_VERSION
+        value: "3.11.0"

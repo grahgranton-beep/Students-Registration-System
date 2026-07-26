@@ -118,9 +118,9 @@ const Profile = () => {
               onClick={handleLogout}
               style={{
                 width: '100%',
-                background: '#fee2e2',
-                color: '#dc2626',
-                border: '1px solid #fca5a5',
+                background: 'var(--bg-tertiary)',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border)',
                 borderRadius: 10,
                 padding: '0.75rem 1rem',
                 fontWeight: 700,

@@ -20,10 +20,10 @@
 
   --color-success: #10b981;
   --color-success-bg: rgba(16, 185, 129, 0.15);
-  --color-warning: #f59e0b;
-  --color-warning-bg: rgba(245, 158, 11, 0.15);
-  --color-error: #ef4444;
-  --color-error-bg: rgba(239, 68, 68, 0.15);
+  --color-warning: #94a3b8;
+  --color-warning-bg: rgba(148, 163, 184, 0.12);
+  --color-error: #94a3b8;
+  --color-error-bg: rgba(148, 163, 184, 0.12);
   --color-info: #3b82f6;
   --color-info-bg: rgba(59, 130, 246, 0.15);
 
@@ -260,8 +260,8 @@ a { color: inherit; }
   letter-spacing: 0.04em;
 }
 .badge-approved { background-color: var(--color-success-bg); color: var(--color-success); }
-.badge-pending { background-color: var(--color-warning-bg); color: var(--color-warning); }
-.badge-rejected { background-color: var(--color-error-bg); color: var(--color-error); }
+.badge-pending { background-color: rgba(148, 163, 184, 0.12); color: #cbd5e1; }
+.badge-rejected { background-color: rgba(148, 163, 184, 0.10); color: #94a3b8; }
 
 /* ── Stats Grid ─────────────────────────────────── */
 .stats-grid {

@@ -9,25 +9,74 @@ from auth import auth_bp
 from routes import api_bp
 from reports import reports_bp
 
+
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
-    
-    # Configure CORS - allow all origins
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
-    
-    # Configure JWT
+
+    # ── CORS Configuration ────────────────────────────────────────────────────
+    # Build a dynamic list of allowed origins
+    allowed_origins = [
+        # Local development
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+    ]
+
+    # Add the Vercel production frontend URL if configured
+    frontend_url = app.config.get('FRONTEND_URL', '')
+    if frontend_url:
+        allowed_origins.append(frontend_url.rstrip('/'))
+        # Also allow with trailing slash just in case
+        if not frontend_url.endswith('/'):
+            allowed_origins.append(frontend_url + '/')
+
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": allowed_origins}},
+        supports_credentials=True,
+        allow_headers=["Content-Type", "Authorization"],
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    )
+
+    # ── JWT ───────────────────────────────────────────────────────────────────
     JWTManager(app)
-    
-    # Initialize DB
+
+    # ── Database ──────────────────────────────────────────────────────────────
     db.init_app(app)
-    
-    # Register blueprints
+
+    # ── Blueprints ────────────────────────────────────────────────────────────
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
-    
-    # Error Handlers
+
+    # ── Health Check ─────────────────────────────────────────────────────────
+    @app.route('/api/health', methods=['GET'])
+    def health_check():
+        """Simple health-check endpoint for Render, uptime monitors, etc."""
+        try:
+            # Quick DB ping
+            db.session.execute(db.text('SELECT 1'))
+            db_status = "connected"
+        except Exception as e:
+            db_status = f"error: {str(e)}"
+        return jsonify({
+            "status": "ok",
+            "database": db_status,
+            "version": "2.4.0"
+        }), 200
+
+    # ── Root route ───────────────────────────────────────────────────────────
+    @app.route('/', methods=['GET'])
+    def root():
+        return jsonify({
+            "message": "Student Registration System API",
+            "status": "running",
+            "docs": "/api/health"
+        }), 200
+
+    # ── Error Handlers ────────────────────────────────────────────────────────
     @app.errorhandler(400)
     def bad_request(error):
         return jsonify({"error": "Bad Request", "message": str(error)}), 400
@@ -47,24 +96,25 @@ def create_app(config_class=Config):
     @app.errorhandler(500)
     def internal_error(error):
         return jsonify({"error": "Internal Server Error", "message": str(error)}), 500
-        
-    # Database Initialization & Seeding
+
+    # ── Database Initialization & Seeding ─────────────────────────────────────
     with app.app_context():
         try:
             db.create_all()
-            print("Database tables created/verified.")
+            print("✅ Database tables created/verified.")
         except Exception as e:
-            print(f"Notice: db.create_all error: {e}")
+            print(f"⚠️  Notice: db.create_all error: {e}")
         try:
             seed_database()
         except Exception as e:
-            print(f"Notice: seed_database error: {e}")
-        
+            print(f"⚠️  Notice: seed_database error: {e}")
+
     return app
+
 
 def seed_database():
     print("Checking and seeding database with academic records...")
-    
+
     # 1. Create Academic Sessions
     past_session = AcademicSession.query.filter_by(name="2024/2025 Semester 2").first()
     if not past_session:
@@ -79,11 +129,10 @@ def seed_database():
         next_session = AcademicSession(name="2025/2026 Semester 2", is_active=False)
         db.session.add(next_session)
     db.session.commit()
-    # Re-fetch after commit to get IDs
     past_session = AcademicSession.query.filter_by(name="2024/2025 Semester 2").first()
     active_session = AcademicSession.query.filter_by(name="2025/2026 Semester 1").first()
 
-    # 2. Create Department
+    # 2. Create Departments
     cs_dept = Department.query.filter_by(code="CS").first()
     if not cs_dept:
         cs_dept = Department(code="CS", name="Computer Science")
@@ -236,8 +285,9 @@ def seed_database():
             )
             db.session.add(log)
             db.session.commit()
-    
-    print("Database seeding / checks completed.")
+
+    print("✅ Database seeding / checks completed.")
+
 
 app = create_app()
 

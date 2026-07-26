@@ -100,8 +100,8 @@ const StudentDashboard = () => {
       desc: "Congratulations! Your application for Semester 2 on-campus housing has been approved for Building B, Room 412.",
     },
     {
-      icon: <AlertTriangle size={18} color="#d97706" />,
-      bg: '#fef3c7',
+      icon: <AlertTriangle size={18} color="#94a3b8" />,
+      bg: 'var(--bg-tertiary)',
       title: 'Incomplete Profile Information',
       time: '3 days ago',
       desc: 'Please update your emergency contact details in the profile section to maintain eligibility for off-site academic trips.',
@@ -138,7 +138,7 @@ const StudentDashboard = () => {
         {registrationStatus === 'pending' && (
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
-            background: '#fef3c7', color: '#92400e', borderRadius: 20,
+            background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', borderRadius: 20,
             padding: '0.3rem 0.75rem', fontSize: '0.8rem', fontWeight: 600,
             border: '1px solid #fde68a',
           }}>
@@ -297,8 +297,8 @@ const StudentDashboard = () => {
           onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
           onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
         >
-          <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FileText size={18} color="#d97706" />
+          <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--bg-tertiary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FileText size={18} color="#94a3b8" />
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Registration Slip</div>
